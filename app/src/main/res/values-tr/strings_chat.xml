@@ -285,7 +285,7 @@
     <string name="chat_example_schedule_title">Günlük bir hatırlatıcı kur</string>
     <string name="chat_example_pdf">Gönderdiğiniz PDF\'i kısa bir özete dönüştürün.</string>
     <string name="chat_example_schedule">Her sabah 8\'de hava durumunu kontrol etmemi hatırlat.</string>
-    <string name="chat_empty_value">Tek cümle yeter — uygulamalarınızı çalıştırır, web\'de gezinir ve işi bitiririm.</string>
+    <string name="chat_empty_value">Bir cümle söyle, telefonda gerisini ben hallederim</string>
     <string name="saved_task_save">Görev olarak kaydet</string>
     <string name="task_field_add">Doldurulacak alan ekle</string>
     <string name="task_field_name">Alan adı</string>
@@ -324,4 +324,11 @@
     <string name="chat_idea_email">Son e-postalarım ne diyor?</string>
     <string name="chat_idea_screenshot">En son ekran görüntümü bul</string>
     <string name="chat_idea_meeting">Yarın saat 15.00\'e bir toplantı ekle</string>
+    <!-- 空对话推广卡上的一句话说明;完整提示词点了才填进输入框 -->
+    <string name="chat_example_github_star_blurb">Açık kaynak Mika projesini destekle</string>
+    <string name="chat_example_follow_blurb">Geliştiriciyi takip et, sohbete katıl</string>
+    <string name="chat_example_group_summary_blurb">Bugünün okunmamışlarını tek satırda özetle</string>
+    <string name="chat_example_share_title">Mika\'yı bir arkadaşınla paylaş</string>
+    <string name="chat_example_share_blurb">İşine yarayacak birine öner</string>
+    <string name="chat_example_share">Mika proje bağlantısını https://github.com/wangzan101/mika bir arkadaşınla paylaş ve telefonu onun yerine kullanabildiğini söyle.</string>
 </resources>

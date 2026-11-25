@@ -57,6 +57,9 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.wangzan101.mika.settings.RecommendedTask
 import com.wangzan101.mika.ui.theme.MikaShapes
+import com.wangzan101.mika.ui.theme.MikaIcons
+import com.wangzan101.mika.ui.components.MikaLogo
+import com.wangzan101.mika.i18n.uiLocale
 import com.wangzan101.mika.ui.theme.MikaTheme
 import com.wangzan101.mika.ui.theme.MikaType
 import kotlinx.coroutines.Dispatchers
@@ -71,30 +74,36 @@ import java.time.LocalTime
 @Composable
 internal fun EmptyState(
     conversation: String?,
-    tasks: List<RecommendedTask>,
     modifier: Modifier = Modifier,
     reduceMotion: Boolean = false,
     onPick: (RecommendedTask) -> Unit,
+    onSend: (RecommendedTask) -> Unit = onPick,
 ) {
     val c = MikaTheme.colors
     val context = LocalContext.current
     val hour = remember(conversation) { LocalTime.now().hour }
-    val ideas by produceState<EmptyIdeas?>(null, tasks) {
-        // 先不按名字认 App,马上出;认名字要读所有 App 的名字,第一次慢,读完再换上
-        value = withContext(Dispatchers.IO) { loadEmptyIdeas(context, tasks, byName = false) }
-        value = withContext(Dispatchers.IO) { loadEmptyIdeas(context, tasks) }
+    // 每次打开一个空对话换一种排法;同一次里两遍加载用同一个,顺序不跳
+    val random = remember(conversation) { kotlin.random.Random(System.nanoTime()) }
+    val seed = remember(conversation) { random.nextLong() }
+    val ideas by produceState<EmptyIdeas?>(null, seed) {
+        value = withContext(Dispatchers.IO) { loadEmptyIdeas(context, kotlin.random.Random(seed)) }
     }
     Column(modifier.fillMaxSize()) {
-        Spacer(Modifier.weight(1f))
+        // 问候放在上方约三分之一处,下面紧跟推广卡;剩下的空间留给底部两条滚动示例
+        Spacer(Modifier.weight(0.55f))
         Column(Modifier.fillMaxWidth().padding(horizontal = ComposerInset)) {
-            Text(ChatCopy.greeting(hour), style = MikaType.LargeTitle, color = c.ink)
-            Text(ChatCopy.EMPTY_VALUE, Modifier.padding(top = 11.dp), style = EmptyLead, color = c.ink2)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                MikaLogo(26.dp, Modifier.border(0.5.dp, c.edge, RoundedCornerShape(8.dp)), corner = 8.dp)
+                Text(remember(conversation) { todayLabel() }, style = MikaType.Caption, color = c.ink3)
+            }
+            Text(ChatCopy.greeting(hour), Modifier.padding(top = 14.dp), style = EmptyGreeting, color = c.ink)
+            Text(ChatCopy.EMPTY_VALUE, Modifier.padding(top = 6.dp), style = EmptyLead, color = c.ink3)
         }
         ideas?.featured?.takeIf { it.isNotEmpty() }?.let { featured ->
             Spacer(Modifier.height(22.dp))
-            FeaturedPager(featured, reduceMotion, onPick)
+            FeaturedPager(featured, reduceMotion, onSend)
         }
-        Spacer(Modifier.weight(1.2f))
+        Spacer(Modifier.weight(1f))
         ideas?.rows?.forEachIndexed { i, row ->
             MarqueeRow(row, reverse = i % 2 == 1, animate = !reduceMotion, onPick = onPick, modifier = Modifier.padding(top = if (i == 0) 0.dp else 8.dp))
         }
@@ -138,27 +147,32 @@ private fun FeaturedPager(items: List<Idea>, reduceMotion: Boolean, onPick: (Rec
 @Composable
 private fun FeaturedCard(idea: Idea, onPick: (RecommendedTask) -> Unit) {
     val c = MikaTheme.colors
+    // 浅灰底、不描边,和底部的示例胶囊同一种材质;副标题是一句说明,点了直接把完整提示词发出去
+    val blurb = idea.blurb ?: idea.task.prompt.lineSequence().firstOrNull { it.isNotBlank() }?.trim().orEmpty()
     Row(
-        Modifier.fillMaxWidth().clip(MikaShapes.Card).background(c.surface).border(0.5.dp, c.edge, MikaShapes.Card)
+        Modifier.fillMaxWidth().clip(FeaturedShape).background(c.fill)
             .clickable(role = Role.Button) { onPick(idea.task) }
-            .padding(14.dp),
+            .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        AppMark(idea, 44.dp)
+        AppMark(idea, 40.dp, tile = c.surface)
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(idea.task.title, style = MikaType.BodyStrong, color = c.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(
-                idea.task.prompt, Modifier.padding(top = 3.dp),
-                style = MikaType.Caption, color = c.ink3, maxLines = 2, minLines = 2, overflow = TextOverflow.Ellipsis,
-            )
+            if (blurb.isNotEmpty()) {
+                Text(blurb, Modifier.padding(top = 2.dp), style = MikaType.Caption, color = c.ink3, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+        // 点卡片直接发出去,所以右边是发送的样子(和输入框的发送键同形,小一号),不是「进下一页」的箭头
+        Box(Modifier.padding(start = 8.dp).size(28.dp).clip(CircleShape).background(c.surface), contentAlignment = Alignment.Center) {
+            Icon(MikaIcons.Up, null, Modifier.size(15.dp), tint = c.ink)
         }
     }
 }
 
 /** App 图标;手机上没有对应 App 时是浅灰底上的线性图标。 */
 @Composable
-private fun AppMark(idea: Idea, size: androidx.compose.ui.unit.Dp) {
+private fun AppMark(idea: Idea, size: androidx.compose.ui.unit.Dp, tile: Color = MikaTheme.colors.fill) {
     val c = MikaTheme.colors
     val shape = RoundedCornerShape(size * 0.26f)
     val app = idea.app
@@ -166,12 +180,21 @@ private fun AppMark(idea: Idea, size: androidx.compose.ui.unit.Dp) {
         Image(app, null, Modifier.size(size).clip(shape))
     } else {
         val site = idea.site
-        Box(Modifier.size(size).clip(shape).background(c.fill), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(size).clip(shape).background(tile), contentAlignment = Alignment.Center) {
             // 网站标志是单色的,跟着字色走,深色模式下自然变白
             if (site != null) Icon(painterResource(site), null, Modifier.size(size * 0.58f), tint = c.ink)
             else Icon(idea.fallback, null, Modifier.size(size * 0.5f), tint = c.ink2)
         }
     }
+}
+
+private val FeaturedShape = RoundedCornerShape(18.dp)
+
+/** 问候上面那行日期:按界面语言的习惯写,如「11月25日 周二」「Tue, Nov 25」。 */
+private fun todayLabel(): String {
+    val locale = uiLocale()
+    val pattern = android.text.format.DateFormat.getBestDateTimePattern(locale, "MMMdEEE")
+    return java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern(pattern, locale))
 }
 
 private const val MARQUEE_DP_PER_SECOND = 22f

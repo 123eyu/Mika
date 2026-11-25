@@ -355,7 +355,7 @@
     <string name="chat_example_schedule_title">اضبط تذكيرًا يوميًا</string>
     <string name="chat_example_pdf">لخّص ملف PDF الذي سأرسله في ملخص قصير</string>
     <string name="chat_example_schedule">كل صباح في الثامنة، ذكّرني بمراجعة الطقس</string>
-    <string name="chat_empty_value">قلها بجملة واحدة، وسأشغّل تطبيقاتك وأتصفح الويب وأنجزها.</string>
+    <string name="chat_empty_value">قل جملة واحدة وسأتولى الأمر على هاتفك</string>
     <string name="saved_task_save">حفظ كمهمة</string>
     <string name="task_field_add">إضافة حقل</string>
     <string name="task_field_name">اسم الحقل</string>
@@ -394,4 +394,11 @@
     <string name="chat_idea_email">ماذا تقول أحدث رسائل بريدي؟</string>
     <string name="chat_idea_screenshot">اعثر على آخر لقطة شاشة</string>
     <string name="chat_idea_meeting">أضف اجتماعًا غدًا الساعة 3 مساءً</string>
+    <!-- 空对话推广卡上的一句话说明;完整提示词点了才填进输入框 -->
+    <string name="chat_example_github_star_blurb">ادعم مشروع Mika مفتوح المصدر</string>
+    <string name="chat_example_follow_blurb">تابع المطوّر وانضم إلى المحادثة</string>
+    <string name="chat_example_group_summary_blurb">ملخّص رسائل اليوم غير المقروءة في سطر</string>
+    <string name="chat_example_share_title">شارك Mika مع صديق</string>
+    <string name="chat_example_share_blurb">انصح به من سيستفيد منه</string>
+    <string name="chat_example_share">شارك رابط مشروع Mika https://github.com/wangzan101/mika مع صديق، وأخبره أنه يستطيع تشغيل الهاتف نيابةً عنه.</string>
 </resources>
