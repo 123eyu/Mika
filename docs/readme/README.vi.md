@@ -1,4 +1,4 @@
-<!-- translated-from: README.md @ 05d44c4e7799 -->
+<!-- translated-from: README.md @ 96cbdcf672d1 -->
 <div align="center">
 
 <img src="../media/logo.png" alt="Mika" width="88" />
@@ -151,7 +151,7 @@ Không chắc điện thoại của bạn có đáp ứng được không? Chạ
 
 **Tôi có thể dùng mô hình chạy trên máy tính của mình không?** Có: chọn "Custom" làm nhà cung cấp và nhập địa chỉ của nó trong mạng nội bộ của bạn.
 
-**Ứng dụng có tiếng Việt không?** Chưa. Giao diện ứng dụng hiện có tiếng Anh, tiếng Ả Rập, tiếng Trung giản thể, tiếng Trung phồn thể, tiếng Nhật, tiếng Hàn, tiếng Tây Ban Nha, tiếng Bồ Đào Nha, tiếng Nga và tiếng Indonesia, đi theo ngôn ngữ hệ thống và đổi được trong Settings › Language (Cài đặt › Ngôn ngữ). Kiến thức tích hợp về ứng dụng và trang web được viết bằng tiếng Trung, nhưng điều đó không giới hạn bạn: mô hình đọc hiểu tốt, và bạn có thể nói chuyện với Mika bằng tiếng Việt.
+**Ứng dụng có tiếng Việt không?** Có. Giao diện ứng dụng có tiếng Việt, tiếng Anh, tiếng Ả Rập, tiếng Ba Tư, tiếng Trung giản thể, tiếng Trung phồn thể, tiếng Nhật, tiếng Hàn, tiếng Tây Ban Nha, tiếng Bồ Đào Nha, tiếng Nga và tiếng Indonesia, đi theo ngôn ngữ hệ thống và đổi được trong Settings › Language (Cài đặt › Ngôn ngữ). Kiến thức tích hợp về ứng dụng và trang web được viết bằng tiếng Trung, nhưng điều đó không giới hạn bạn: mô hình đọc hiểu tốt, và bạn có thể nói chuyện với Mika bằng tiếng Việt.
 
 **Cập nhật đến từ đâu?** Chỉ từ [Releases](https://github.com/wangzan101/Mika/releases) của repo này; bạn cũng có thể nâng cấp trong ứng dụng từ About › Check for updates (Giới thiệu › Kiểm tra cập nhật).
 
