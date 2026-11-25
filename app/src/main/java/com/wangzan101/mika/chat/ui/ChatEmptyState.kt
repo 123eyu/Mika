@@ -49,6 +49,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -164,8 +165,11 @@ private fun AppMark(idea: Idea, size: androidx.compose.ui.unit.Dp) {
     if (app != null) {
         Image(app, null, Modifier.size(size).clip(shape))
     } else {
+        val site = idea.site
         Box(Modifier.size(size).clip(shape).background(c.fill), contentAlignment = Alignment.Center) {
-            Icon(idea.fallback, null, Modifier.size(size * 0.5f), tint = c.ink2)
+            // 网站标志是单色的,跟着字色走,深色模式下自然变白
+            if (site != null) Icon(painterResource(site), null, Modifier.size(size * 0.58f), tint = c.ink)
+            else Icon(idea.fallback, null, Modifier.size(size * 0.5f), tint = c.ink2)
         }
     }
 }
