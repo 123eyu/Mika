@@ -314,4 +314,14 @@
     <string name="plus_reuse_hint">说法 · 清单 · 流程</string>
     <string name="plus_reuse_phrases">常用说法</string>
     <string name="drawer_calls">AI 电话</string>
+    <!-- 空对话滚动条里的灵感示例;点了填进输入框 -->
+    <string name="chat_idea_maps">导航去最近的咖啡店</string>
+    <string name="chat_idea_camera">打开相机拍张照片</string>
+    <string name="chat_idea_sms">给妈妈发短信：我到家了</string>
+    <string name="chat_idea_news">搜一下今天的科技新闻</string>
+    <string name="chat_idea_dark">把手机调成深色模式</string>
+    <string name="chat_idea_music">放一首轻松的音乐</string>
+    <string name="chat_idea_email">看看最新的邮件说了什么</string>
+    <string name="chat_idea_screenshot">找出相册里最近的截图</string>
+    <string name="chat_idea_meeting">明天下午三点加个会议日程</string>
 </resources>

@@ -314,4 +314,14 @@
     <string name="plus_reuse_hint">문구 · 목록 · 흐름</string>
     <string name="plus_reuse_phrases">자주 쓰는 문구</string>
     <string name="drawer_calls">AI 전화</string>
+    <!-- 空对话滚动条里的灵感示例;点了填进输入框 -->
+    <string name="chat_idea_maps">가장 가까운 카페로 길 안내해 줘</string>
+    <string name="chat_idea_camera">카메라 열고 사진 찍어 줘</string>
+    <string name="chat_idea_sms">엄마한테 \'집에 도착했어\' 문자 보내 줘</string>
+    <string name="chat_idea_news">오늘의 IT 뉴스 검색해 줘</string>
+    <string name="chat_idea_dark">다크 모드 켜 줘</string>
+    <string name="chat_idea_music">편안한 음악 틀어 줘</string>
+    <string name="chat_idea_email">최근 메일 내용 알려 줘</string>
+    <string name="chat_idea_screenshot">가장 최근 스크린샷 찾아 줘</string>
+    <string name="chat_idea_meeting">내일 오후 3시에 회의 일정 추가해 줘</string>
 </resources>

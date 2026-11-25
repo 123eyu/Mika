@@ -314,4 +314,14 @@
     <string name="plus_reuse_hint">İfadeler · listeler · akışlar</string>
     <string name="plus_reuse_phrases">Kayıtlı ifadeler</string>
     <string name="drawer_calls">AI aramaları</string>
+    <!-- 空对话滚动条里的灵感示例;点了填进输入框 -->
+    <string name="chat_idea_maps">En yakın kafeye yol tarifi ver</string>
+    <string name="chat_idea_camera">Kamerayı aç ve bir fotoğraf çek</string>
+    <string name="chat_idea_sms">Anneme mesaj at: eve vardım</string>
+    <string name="chat_idea_news">Bugünün teknoloji haberlerini ara</string>
+    <string name="chat_idea_dark">Karanlık modu aç</string>
+    <string name="chat_idea_music">Rahatlatıcı bir müzik çal</string>
+    <string name="chat_idea_email">Son e-postalarım ne diyor?</string>
+    <string name="chat_idea_screenshot">En son ekran görüntümü bul</string>
+    <string name="chat_idea_meeting">Yarın saat 15.00\'e bir toplantı ekle</string>
 </resources>

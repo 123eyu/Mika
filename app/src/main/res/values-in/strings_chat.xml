@@ -314,4 +314,14 @@
     <string name="plus_reuse_hint">Frasa · daftar · alur</string>
     <string name="plus_reuse_phrases">Frasa tersimpan</string>
     <string name="drawer_calls">Panggilan AI</string>
+    <!-- 空对话滚动条里的灵感示例;点了填进输入框 -->
+    <string name="chat_idea_maps">Arahkan ke kedai kopi terdekat</string>
+    <string name="chat_idea_camera">Buka kamera dan ambil foto</string>
+    <string name="chat_idea_sms">SMS ke Ibu: aku sudah di rumah</string>
+    <string name="chat_idea_news">Cari berita teknologi hari ini</string>
+    <string name="chat_idea_dark">Nyalakan mode gelap</string>
+    <string name="chat_idea_music">Putar musik yang santai</string>
+    <string name="chat_idea_email">Apa isi email terbaru saya?</string>
+    <string name="chat_idea_screenshot">Temukan tangkapan layar terbaru saya</string>
+    <string name="chat_idea_meeting">Tambahkan rapat besok pukul 15.00</string>
 </resources>

@@ -314,4 +314,14 @@
     <string name="plus_reuse_hint">フレーズ · リスト · フロー</string>
     <string name="plus_reuse_phrases">よく使うフレーズ</string>
     <string name="drawer_calls">AI 電話</string>
+    <!-- 空对话滚动条里的灵感示例;点了填进输入框 -->
+    <string name="chat_idea_maps">一番近いカフェまでナビして</string>
+    <string name="chat_idea_camera">カメラを開いて写真を撮って</string>
+    <string name="chat_idea_sms">母に「家に着いたよ」とSMSして</string>
+    <string name="chat_idea_news">今日のテックニュースを検索して</string>
+    <string name="chat_idea_dark">ダークモードをオンにして</string>
+    <string name="chat_idea_music">リラックスできる音楽を流して</string>
+    <string name="chat_idea_email">最新のメールの内容を教えて</string>
+    <string name="chat_idea_screenshot">最近のスクリーンショットを探して</string>
+    <string name="chat_idea_meeting">明日15時に会議の予定を入れて</string>
 </resources>

@@ -328,4 +328,14 @@
     <string name="plus_reuse_hint">Phrases · lists · flows</string>
     <string name="plus_reuse_phrases">Saved phrases</string>
     <string name="drawer_calls">AI calls</string>
+    <!-- 空对话滚动条里的灵感示例;点了填进输入框 -->
+    <string name="chat_idea_maps">Navigate to the nearest coffee shop</string>
+    <string name="chat_idea_camera">Open the camera and take a photo</string>
+    <string name="chat_idea_sms">Text Mom: I\'m home</string>
+    <string name="chat_idea_news">Search today\'s tech news</string>
+    <string name="chat_idea_dark">Turn on dark mode</string>
+    <string name="chat_idea_music">Play some relaxing music</string>
+    <string name="chat_idea_email">What do my latest emails say?</string>
+    <string name="chat_idea_screenshot">Find my most recent screenshot</string>
+    <string name="chat_idea_meeting">Add a meeting tomorrow at 3 pm</string>
 </resources>

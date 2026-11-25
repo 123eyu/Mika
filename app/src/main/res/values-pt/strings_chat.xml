@@ -342,4 +342,14 @@
     <string name="plus_reuse_hint">Frases · listas · fluxos</string>
     <string name="plus_reuse_phrases">Frases salvas</string>
     <string name="drawer_calls">Chamadas IA</string>
+    <!-- 空对话滚动条里的灵感示例;点了填进输入框 -->
+    <string name="chat_idea_maps">Me leve à cafeteria mais próxima</string>
+    <string name="chat_idea_camera">Abra a câmera e tire uma foto</string>
+    <string name="chat_idea_sms">Mande para a mãe: cheguei em casa</string>
+    <string name="chat_idea_news">Pesquise as notícias de tecnologia de hoje</string>
+    <string name="chat_idea_dark">Ative o modo escuro</string>
+    <string name="chat_idea_music">Toque uma música relaxante</string>
+    <string name="chat_idea_email">O que dizem meus últimos e-mails?</string>
+    <string name="chat_idea_screenshot">Encontre minha captura de tela mais recente</string>
+    <string name="chat_idea_meeting">Adicione uma reunião amanhã às 15h</string>
 </resources>

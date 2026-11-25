@@ -384,4 +384,14 @@
     <string name="plus_reuse_hint">عبارات · قوائم · مسارات</string>
     <string name="plus_reuse_phrases">العبارات المحفوظة</string>
     <string name="drawer_calls">مكالمات الذكاء الاصطناعي</string>
+    <!-- 空对话滚动条里的灵感示例;点了填进输入框 -->
+    <string name="chat_idea_maps">وجّهني إلى أقرب مقهى</string>
+    <string name="chat_idea_camera">افتح الكاميرا والتقط صورة</string>
+    <string name="chat_idea_sms">أرسل لأمي: وصلت إلى البيت</string>
+    <string name="chat_idea_news">ابحث عن أخبار التقنية اليوم</string>
+    <string name="chat_idea_dark">فعّل الوضع الداكن</string>
+    <string name="chat_idea_music">شغّل موسيقى هادئة</string>
+    <string name="chat_idea_email">ماذا تقول أحدث رسائل بريدي؟</string>
+    <string name="chat_idea_screenshot">اعثر على آخر لقطة شاشة</string>
+    <string name="chat_idea_meeting">أضف اجتماعًا غدًا الساعة 3 مساءً</string>
 </resources>

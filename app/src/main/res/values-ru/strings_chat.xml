@@ -356,4 +356,14 @@
     <string name="plus_reuse_hint">Фразы · списки · сценарии</string>
     <string name="plus_reuse_phrases">Сохранённые фразы</string>
     <string name="drawer_calls">ИИ-звонки</string>
+    <!-- 空对话滚动条里的灵感示例;点了填进输入框 -->
+    <string name="chat_idea_maps">Проложи маршрут до ближайшей кофейни</string>
+    <string name="chat_idea_camera">Открой камеру и сделай фото</string>
+    <string name="chat_idea_sms">Напиши маме: я дома</string>
+    <string name="chat_idea_news">Найди новости технологий за сегодня</string>
+    <string name="chat_idea_dark">Включи тёмную тему</string>
+    <string name="chat_idea_music">Включи спокойную музыку</string>
+    <string name="chat_idea_email">Что в моих последних письмах?</string>
+    <string name="chat_idea_screenshot">Найди мой последний скриншот</string>
+    <string name="chat_idea_meeting">Добавь встречу завтра в 15:00</string>
 </resources>

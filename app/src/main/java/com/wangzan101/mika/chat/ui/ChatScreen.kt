@@ -428,7 +428,7 @@ fun ChatScreen(
             ) {
                 if (emptyConversation) {
                     item("empty") {
-                        EmptyState(ui.conversationId, recommendedTasks, Modifier.fillParentMaxHeight(), onPick = pickTask)
+                        EmptyState(ui.conversationId, recommendedTasks, Modifier.fillParentMaxHeight(), reduceMotion = reduceMotion, onPick = pickTask)
                     }
                 }
                 ui.exchanges.forEachIndexed { i, ex ->
