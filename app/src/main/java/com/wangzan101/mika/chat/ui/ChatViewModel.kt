@@ -437,6 +437,12 @@ class ChatViewModel(
     /** 前台派出的一件在问问题,用户在问题卡上点了 [words]。 */
     fun answerDeskTask(taskId: String, words: String) { desking?.answer(taskId, words) }
 
+    /** 输入框的停止键:这条会话里在干的全停下——直接跑的任务、前台没回完的话、前台派出去的每一件。 */
+    fun stopAll() {
+        if (ui.value.composer == ComposerMode.Busy) cancel()
+        desking?.stopAll()
+    }
+
     /** 停下前台派出的一件。 */
     fun cancelDeskTask(taskId: String) { desking?.cancel(taskId) }
 

@@ -87,6 +87,8 @@ internal fun Composer(
     hasHistory: Boolean,
     onSend: () -> Unit,
     onStop: () -> Unit,
+    /** 前台在回话或它派出的事还在跑:和 [ComposerMode.Busy] 一样,没字时右边是停止。 */
+    working: Boolean = false,
     /** 这个对话明确排队、还没开始的下一件。 */
     queued: List<com.wangzan101.mika.task.QueuedFollowUp> = emptyList(),
     onQueueActions: (com.wangzan101.mika.task.QueuedFollowUp) -> Unit = {},
@@ -277,8 +279,8 @@ internal fun Composer(
                                 Icon(MikaIcons.Mic, hint, Modifier.size(MikaSize.Icon), tint = c.ink)
                             }
                         }
-                        // 任务在跑时没字就停止;写了字停止让位给发送,发出去的话交给当前任务
-                        if (busy && !canSend) {
+                        // 在干活时(任务在跑、Mika 在回话或派出的事在跑)没字就停止;写了字停止让位给发送,发出去的话交给 Mika
+                        if ((busy || working) && !canSend) {
                             Box(
                                 Modifier.size(MikaSize.IconButton).clip(CircleShape)
                                     .clickable(onClickLabel = stringResource(R.string.chat_stop), onClick = onStop),
@@ -287,7 +289,7 @@ internal fun Composer(
                                 Icon(MikaIcons.Stop, stringResource(R.string.chat_stop), Modifier.size(26.dp), tint = c.ink)
                             }
                         }
-                        if (!busy || canSend) {
+                        if (!(busy || working) || canSend) {
                             // 可发时黑底白箭头(主操作);空输入灰底灰箭头——发送是主行动,空态也有圆底和＋/话筒拉开层级,但灰箭头表明还不可用。全用 token,深色主题自动反转
                             Box(
                                 Modifier.size(MikaSize.IconButton)
