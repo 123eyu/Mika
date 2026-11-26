@@ -17,6 +17,7 @@ import com.wangzan101.mika.core.frontdesk.FrontDesk
 import com.wangzan101.mika.core.frontdesk.ReplyContext
 import com.wangzan101.mika.frontdesk.DeskNotifier
 import com.wangzan101.mika.i18n.tr
+import com.wangzan101.mika.settings.ModelChoice
 import com.wangzan101.mika.settings.Problem
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.NonCancellable
@@ -48,7 +49,7 @@ class DeskChatDeps(
      * 按此刻设置里的模型新造一个这条会话的文字前台;没配模型时为 null(发出去拦下,引导去模型设置)。
      * 每一轮(回话、汇报)都新造一个,所以设置里换了模型,下一句就用新的。
      */
-    val brain: (conversationId: String) -> DeskBrain?,
+    val brain: (conversationId: String, mainOverride: ModelChoice?) -> DeskBrain?,
     /** 给还没有标题、也还没存过一轮的会话按第一句话起标题(见 [com.wangzan101.mika.chat.ConversationTitler.ensure])。 */
     val title: suspend (conversationId: String, first: String) -> Unit = { _, _ -> },
 )
@@ -193,12 +194,13 @@ internal class DeskChatOps(
      * 没配模型时不发,界面上拦下并引导去模型设置,返回 false。
      */
     fun send(text: String): Boolean {
-        val brain = deps.brain(conversationId)
+        val brain = deps.brain(conversationId, vm.effectiveMainModelChoice(conversationId))
         if (brain == null) {
             _ui.update { it.copy(blocked = listOf(Problem.NoModel)) }
             return false
         }
         remember(text)
+        vm.flushPendingMainModel(conversationId)
         name(text)
         val runId = newRunId()
         val startedAt = vm.clock()
@@ -224,6 +226,7 @@ internal class DeskChatOps(
      */
     fun sendFiles(text: String, goal: String, files: List<Pair<String, Long>>, title: String) {
         val typed = remember(text)
+        vm.flushPendingMainModel(conversationId)
         name(text)
         val runId = newRunId()
         val startedAt = vm.clock()
@@ -271,7 +274,7 @@ internal class DeskChatOps(
             is DeskEvent.Succeeded -> return turns.withLock { result(event.taskId, DeskNotifier.rowText(report).orEmpty()) }
             else -> Unit
         }
-        val brain = deps.brain(conversationId) ?: return false
+        val brain = deps.brain(conversationId, vm.effectiveMainModelChoice(conversationId)) ?: return false
         return turns.withLock {
             if (!page.showing(conversationId)) return@withLock false
             val taskId = report.event.taskId
