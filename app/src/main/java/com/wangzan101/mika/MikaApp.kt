@@ -108,12 +108,17 @@ class MikaApp : Application(), WebOwner, SandboxOwner, TaskEnvironment.Owner, Ph
     internal fun workflowInterrupted(attemptId: String) {
         scope.launch(Dispatchers.IO) { workflows.complete(attemptId, false, "", "interrupted") }
     }
+    /** 这一步到了任务服务门口用户已暂停了 Mika:记失败,流程停在待确认,恢复后由用户决定。 */
+    internal fun workflowPaused(attemptId: String) {
+        scope.launch(Dispatchers.IO) { workflows.complete(attemptId, false, "", com.wangzan101.mika.core.run.PauseFlag.REASON) }
+    }
     val workflows by lazy {
         com.wangzan101.mika.workflow.WorkflowRuntime(
             com.wangzan101.mika.workflow.WorkflowStore(
                 java.io.File(filesDir, com.wangzan101.mika.workflow.WorkflowStore.FILE),
                 com.wangzan101.mika.settings.KeystoreKeyCipher("mika-workflows"),
             ),
+            com.wangzan101.mika.settings.MikaPause.get(this),
         ) { dispatch -> TaskService.startWorkflow(this, dispatch.attemptId) }
     }
 
@@ -618,6 +623,10 @@ class MikaApp : Application(), WebOwner, SandboxOwner, TaskEnvironment.Owner, Ph
                     ).toString()
                 }.orEmpty()
             },
+            paused = com.wangzan101.mika.settings.MikaPause.get(app)::paused,
+            onPausedBlocked = {
+                android.widget.Toast.makeText(app, tr(R.string.pause_blocked_task), android.widget.Toast.LENGTH_LONG).show()
+            },
             teaching = { teach.blocksTasks() },
             onTeachingBlocked = {
                 android.widget.Toast.makeText(app, tr(R.string.teach_blocked_task), android.widget.Toast.LENGTH_LONG).show()
@@ -705,7 +714,9 @@ class MikaApp : Application(), WebOwner, SandboxOwner, TaskEnvironment.Owner, Ph
         // 告诉内置助手:Mika 被杀后要不要把它拉起来(胶囊一直显示或有任务在跑时才要;退出期间都不要)
         com.wangzan101.mika.cap.phone.setup.RestoreWishSync(
             phone.hub, flags.capsuleModeChanges(), taskState.busy, phone.recoverySettings.consent,
-            phone.recovery.accessibility, flags.quitChanges(),
+            phone.recovery.accessibility,
+            // 完全退出或暂停了 Mika:都不让助手把 Mika 拉起来
+            kotlinx.coroutines.flow.combine(flags.quitChanges(), com.wangzan101.mika.settings.MikaPause.get(this).state) { q, p -> q || p },
         ).start()
         // 上次异常退出时留下的改动(App 被静音)在这里恢复
         scope.launch { taskRecovery.recover() }
