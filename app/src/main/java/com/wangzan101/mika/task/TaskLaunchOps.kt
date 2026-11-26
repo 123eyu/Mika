@@ -200,7 +200,8 @@ internal fun TaskService.nameConversation(store: ConversationStore, id: String, 
             // 起标题也属于这段对话,和对话里的任务用同一个会话号
             val session = ModelSession.of(id)
             ConversationTitler.ensure(store, id, first, {
-                listOfNotNull(env.lightModelFactory(this@nameConversation, session), env.modelFactory(this@nameConversation, session))
+                val models = env.modelSnapshot(this@nameConversation, session, store.settings(id).main)
+                listOfNotNull(models.light, models.main)
             }, language = AppLanguage.resolved(this@nameConversation).tag)
         }.onFailure { if (it is CancellationException) throw it }
     }
