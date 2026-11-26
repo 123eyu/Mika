@@ -255,6 +255,16 @@
 
 有能看图的模型时(§12),提供 `phone_describe`/`web_describe`(描述界面)和 `phone_find_visually`/`web_find_visually`(看图定位,`core/screen/vision/Locator.kt`:先在控件树里精确找,找不到才让模型框,再核对名字;定位准度没验证过的模型要有佐证,但这一屏的树不能用、或缺了一块而要找的不在树里时没东西可对照,框照样交出去,标 `unverified`,点完由效果说话)。描述界面一次要读整屏、写一大段,比定位慢好几倍:提示词里只让它在看不懂是什么页面时用,描述的要求(`roles/describe.md`)也只要简短的四段——可交互元素至多 15 行、每个几个字,不列不是控件的字,长列表只给前几项,线索至多两行。截图工具只在主模型能看图时提供。图形验证码不自己解,交给用户。
 
+### 视频
+
+视频能力(`core/cap/video/`,App 侧 `app/media/AndroidVideoPort.kt`)只在手机上发起的任务里装:`video_info` 读时长、尺寸、有没有音轨;`video_frames` 均匀抽 1–12 帧(长边 1280 的 JPEG),主模型能看图时作为图片交给它,不能看图时只给元数据。抽帧只是样本,提示词要求不说「看完了」「听到了」。解码直接在工作区闸门核实过的那个句柄上做(`app/media/VideoProbe.kt` 把 `GatedFile` 包成 `MediaDataSource`),不先复制到缓存,也不整段读进内存。`video_save` 存进「影片/Mika」(`VideoExporter`,MediaStore,默认先出确认卡片)。`phone_share_video` 和分享图片走同一条路:`ShareFileExporter` 边读边写复制到「下载/Mika/share」,再用 `ACTION_SEND` 打开对方 App 的分享页,不替用户点发送。聊天卡片的封面同样在句柄上取一帧;点开播放时经闸门复制一份到 `cache/videoplay/`(只留最近一份,启动时清空),用 FileProvider 只读交给系统播放器。
+
+`video_generate`(用户在「模型 › 视频模型」里选了服务商和模型并打开才提供,每任务默认至多 1 个)提交异步任务、轮询、把结果边下边写进 `cache/video-gen/` 再写进 `/workspace/out/video/`,生成的视频随这一轮存进对话、画成卡片。进度(已提交、排队、生成中)按用户语言显示在任务卡片上。首帧图过大时先缩到长边 2048 的 JPEG 再发。
+
+视频生成是服务商声明出来的一项能力,不是每家都有。`core/model/VideoBackend.kt` 里一个 `VideoBackend` 声明一种协议:`serves(baseUrl)` 认哪些服务商地址(只认官方文档写明的地址,中转、自定义地址不认),`capabilities(model)` 给每个模型能做什么(时长范围、宽高比、清晰度、能否带首帧、带首帧时比例是否跟图走、能否要声音;认不出的模型给各模型都支持的那部分),`create(VideoEndpoint)` 建 `VideoModel` 适配器;`VideoBackends.all` 是登记表,目前只有火山方舟 Seedance(声明在 `ArkSeedance.kt`、适配器在 `ArkSeedanceModel.kt`,这家的细节只在这两个文件里)。App 侧 `settings/VideoSelection.kt` 的 `VideoProviders` 按登记表筛服务商、核对存着的选择:设置页只列能生成视频的服务商,时长、宽高比、清晰度的选项来自所填模型的能力;存着的选择(`VideoChoice`:服务商、模型、协议 ID)在服务商被删、或地址改得不再说那种协议时为 `Stale`,不清掉(地址改回来还能用),设置页说明原因,`ProviderStore.videoModel` 不建模型,任务里也就没有这个工具,请求不会发到不说这种协议的地址。再接一家只要写一个适配器加一个声明、登记进 `VideoBackends.all`,工具、`AndroidVideoGenerationPort`、`TaskRun` 都不用改(服务商须先过「只接主流、可信的」审查)。
+
+计费安全:提交请求不自动重发(关掉 OkHttp 的连接失败重试),请求发出后连接断了报 `VideoModelError.Unconfirmed`(不知道建没建成);轮询有总时限(默认 30 分钟),偶发的网络 / 5xx / 限流容忍几次,不因一次抖动丢下已在计费的任务;提交时带服务商允许的最短过期时间(方舟 `execution_expires_after` 为 1 小时),本地放弃的任务不会排很久之后才跑。提交之后因取消、本地超时或出错不再等时,尽力发一次取消(方舟 DELETE:只有排队中的能取消、不再计费;生成中的取消不了,会跑完并计费)。每任务额度只在确定没花钱时退回(服务商还没收下任务,或明确报告任务失败);收下之后的超时、断网、下载失败和提交未确认都不退,提示词也要求模型不自动重试。下载结果用服务商给的临时链接,不带服务商的 Key 和请求头;取消时立即断开连接,缓存文件和写了一半的工作区文件都删掉。
+
 ### 子任务
 
 `spawn_agent`(`core/general/SpawnAgent.kt`、`core/run/ChildRuns.kt`)派一个子任务去查一个有边界的问题:只有网页和沙箱、只读、无人在场、默认 15 步(模型可传 `maxSteps`,1–40),不能追问、不能对外发送、不能写记忆、不能建定时、不能再派子任务,也没有知识与技能查阅工具。结果有长度上限(默认 4,000 字,模型可传 `maxResultChars`,500–8,000;超出范围的拉回范围内,不是整数的按参数错退回;截掉时结果里写 `truncated` 和原始长度 `fullLength`;执行器交回全文,落盘记录另存最多 4,000 字的预览),作为不可信的观察交回父任务;一次只派一个,父任务等它做完;子任务做完不等于用户的目标完成。只在对话界面发起、有网页能力的运行里提供。
