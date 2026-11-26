@@ -1,5 +1,6 @@
 package com.wangzan101.mika.task
 
+import com.wangzan101.mika.i18n.AppLanguage
 import com.wangzan101.mika.i18n.tr
 import android.app.NotificationManager
 import android.os.RemoteException
@@ -198,9 +199,9 @@ internal fun TaskService.nameConversation(store: ConversationStore, id: String, 
             val env = TaskEnvironment.of(this@nameConversation)
             // 起标题也属于这段对话,和对话里的任务用同一个会话号
             val session = ModelSession.of(id)
-            ConversationTitler.ensure(store, id, first) {
+            ConversationTitler.ensure(store, id, first, {
                 listOfNotNull(env.lightModelFactory(this@nameConversation, session), env.modelFactory(this@nameConversation, session))
-            }
+            }, language = AppLanguage.resolved(this@nameConversation).tag)
         }.onFailure { if (it is CancellationException) throw it }
     }
 }

@@ -624,13 +624,13 @@ class MikaApp : Application(), WebOwner, SandboxOwner, TaskEnvironment.Owner, Ph
                 // 前台接的新对话不经任务那边起标题,这里按第一句话起一次;轻量模型在前,主模型兜底,用量记在这条对话上
                 title = { id, first ->
                     kotlinx.coroutines.withContext(conversations.meter(id)) {
-                        com.wangzan101.mika.chat.ConversationTitler.ensure(conversations, id, first) {
+                        com.wangzan101.mika.chat.ConversationTitler.ensure(conversations, id, first, {
                             val session = com.wangzan101.mika.core.model.ModelSession.of(id)
                             listOfNotNull(
                                 providers.modelFor(com.wangzan101.mika.core.model.ModelRole.Light, session),
                                 providers.modelFor(com.wangzan101.mika.core.model.ModelRole.Main, session),
                             )
-                        }
+                        }, language = AppLanguage.resolved(this@MikaApp).tag)
                     }
                 },
             ),
