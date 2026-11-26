@@ -29,6 +29,13 @@
   opening the existing standby checklist (`calls/CallStandbyService.kt`, `calls/ui/CallSettingsScreen.kt`,
   `ui/MainActivity.kt`, with `app/src/androidTest/java/com/wangzan101/mika/calls/ui/CallStandbyNotificationRouteTest.kt`).
   Adapted to Mika's split call runtime, full-exit semantics and existing translations, with policy unit tests.
+- Follow-up port: FlashPhone v1.1.16 (`2a46887f26a6f09f7fc664702d4e193c0b81e5b4`), dialer and
+  call-history interactions: a collapsible dial pad whose keys and backspace edit at the
+  cursor/selection (`calls/ui/CallDialNumberEdit.kt`, `calls/ui/CallTaskScreen.kt`), clearing
+  the one-off task draft with an in-memory undo, and clearing the history search / resetting
+  filters (`calls/ui/CallHistorySection.kt`), with their unit/UI tests. Adapted to Mika's existing
+  task form, theme and translations; SIM choice, outgoing review and locked dialling are unchanged.
+  FlashPhone's standalone dialer layout, recording storage/playback and persisted drafts are not included.
 - Service: 实时语音经火山引擎（Volcengine）的 WebSocket 接口,凭证由用户在通话设置页填写。
 
 ## scrcpy
