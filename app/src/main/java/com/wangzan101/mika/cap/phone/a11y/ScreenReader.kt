@@ -306,10 +306,14 @@ internal object ScreenReader {
         return if (joined.length > AGGREGATE_MAX) joined.take(AGGREGATE_MAX) + "…" else joined
     }
 
+    // 每个节点都要判一次,正则只编译一回
+    private val ID_WORD = Regex("^[A-Za-z0-9_]{4,}$")
+    private val ID_LETTERS = Regex("[A-Za-z]{3}")
+
     /** `com.x:id/cart_icon` → `cart_icon`;混淆过的短名认不出用途,不给。 */
     private fun readableResourceId(id: String?): String? {
         val short = id?.substringAfterLast('/') ?: return null
-        return short.takeIf { Regex("^[A-Za-z0-9_]{4,}$").matches(it) && Regex("[A-Za-z]{3}").containsMatchIn(it) }
+        return short.takeIf { ID_WORD.matches(it) && ID_LETTERS.containsMatchIn(it) }
     }
 
     private const val FNV_OFFSET = -0x340d631b7bdddcdbL
