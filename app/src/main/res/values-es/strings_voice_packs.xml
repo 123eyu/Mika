@@ -21,6 +21,9 @@
     <string name="voice_pack_import">Importar desde archivos</string>
     <string name="voice_pack_copy_urls">Copiar enlaces de descarga</string>
     <string name="voice_pack_download_failed">La descarga no terminó. Inténtalo de nuevo, o descarga los archivos en un ordenador e impórtalos.</string>
+    <string name="voice_pack_mirror">Descargar con réplicas</string>
+    <string name="voice_pack_mirror_note">Actívalo si GitHub va lento o no responde. Las réplicas las gestionan terceros; cada archivo se sigue comprobando con su suma de verificación. Es el mismo ajuste que «Usar réplicas para descargar» en Acerca de Mika.</string>
+    <string name="voice_pack_download_failed_mirror_off">No se pudo descargar. Si GitHub va lento o no responde, activa «Descargar con réplicas» arriba y vuelve a intentarlo, o descárgalo en un ordenador e impórtalo desde archivos.</string>
     <string name="voice_pack_metered_title">¿Descargar con datos móviles?</string>
     <string name="voice_pack_metered_body">Este paquete de voz ocupa unos %1$s. Estás en una red de uso medido (como datos móviles o un punto de acceso).</string>
     <string name="voice_pack_metered_confirm">Descargar igualmente</string>

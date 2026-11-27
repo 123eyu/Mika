@@ -21,6 +21,9 @@
     <string name="voice_pack_import">Импорт из файлов</string>
     <string name="voice_pack_copy_urls">Копировать ссылки для загрузки</string>
     <string name="voice_pack_download_failed">Загрузка не завершилась. Попробуйте снова или скачайте файлы на компьютере и импортируйте их.</string>
+    <string name="voice_pack_mirror">Загружать через зеркала</string>
+    <string name="voice_pack_mirror_note">Включите, если GitHub работает медленно или недоступен. Зеркала принадлежат третьим лицам, но каждый файл по-прежнему проверяется по контрольной сумме. Это тот же переключатель, что «Использовать зеркала для загрузок» в разделе «О Mika».</string>
+    <string name="voice_pack_download_failed_mirror_off">Не удалось загрузить. Если GitHub работает медленно или недоступен, включите «Загружать через зеркала» выше и попробуйте снова или скачайте на компьютере и импортируйте из файлов.</string>
     <string name="voice_pack_metered_title">Загрузить через мобильный интернет?</string>
     <string name="voice_pack_metered_body">Размер этого голосового пакета около %1$s. Сейчас вы в лимитной сети (например, мобильный интернет или точка доступа).</string>
     <string name="voice_pack_metered_confirm">Всё равно загрузить</string>

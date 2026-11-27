@@ -21,6 +21,9 @@
     <string name="voice_pack_import">Dosyalardan içe aktar</string>
     <string name="voice_pack_copy_urls">İndirme bağlantılarını kopyala</string>
     <string name="voice_pack_download_failed">İndirme tamamlanmadı. Yeniden deneyin ya da dosyaları bilgisayarda indirip içe aktarın.</string>
+    <string name="voice_pack_mirror">Yansılar üzerinden indir</string>
+    <string name="voice_pack_mirror_note">GitHub yavaşsa veya erişilemiyorsa açın. Yansılar üçüncü taraflarca işletilir; her dosya yine sağlama toplamıyla denetlenir. Mika Hakkında bölümündeki “İndirmeler için yansıları kullan” ile aynı ayardır.</string>
+    <string name="voice_pack_download_failed_mirror_off">İndirme başarısız oldu. GitHub yavaşsa veya erişilemiyorsa yukarıdaki “Yansılar üzerinden indir” seçeneğini açıp yeniden deneyin ya da bilgisayarda indirip dosyalardan içe aktarın.</string>
     <string name="voice_pack_metered_title">Mobil veriyle indirilsin mi?</string>
     <string name="voice_pack_metered_body">Bu ses paketi yaklaşık %1$s. Ölçülü bir ağdasınız (mobil veri veya erişim noktası gibi).</string>
     <string name="voice_pack_metered_confirm">Yine de indir</string>

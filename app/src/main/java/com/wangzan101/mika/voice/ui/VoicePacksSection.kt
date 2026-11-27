@@ -47,10 +47,13 @@ import com.wangzan101.mika.ui.components.ButtonKind
 import com.wangzan101.mika.ui.components.ButtonSize
 import com.wangzan101.mika.ui.components.FooterNote
 import com.wangzan101.mika.ui.components.GroupCard
+import com.wangzan101.mika.ui.components.ListRow
 import com.wangzan101.mika.ui.components.MikaButton
 import com.wangzan101.mika.ui.components.MikaDialog
+import com.wangzan101.mika.ui.components.MikaSwitch
 import com.wangzan101.mika.ui.components.PillTone
 import com.wangzan101.mika.ui.components.StatusPill
+import com.wangzan101.mika.ui.theme.MikaIcons
 import com.wangzan101.mika.ui.theme.MikaTheme
 import com.wangzan101.mika.ui.theme.MikaType
 import com.wangzan101.mika.voice.model.VoiceCatalogSnapshot
@@ -64,8 +67,8 @@ import java.io.IOException
 import java.util.Locale
 
 /**
- * 设置 › 模型 › 语音转文字 › 离线语音包:每个包一张卡片(名称、语言、大小、许可、状态和操作)。
- * 从语音转文字页和「还不能语音输入」的「下载离线语音包」进来。设备一个包都跑不了时整页只剩说明(入口本来也不显示)。
+ * 设置 › 模型 › 语音输入 › 离线语音包:每个包一张卡片(名称、语言、大小、许可、状态和操作)。
+ * 从语音输入页和「还不能语音输入」的「下载离线语音包」进来。设备一个包都跑不了时整页只剩说明(入口本来也不显示)。
  */
 @Composable
 fun VoicePacksScreen(onBack: () -> Unit) {
@@ -85,6 +88,7 @@ fun VoicePacksSection(viewModel: VoicePacksViewModel) {
     val cards by viewModel.cards.collectAsState()
     val prompt by viewModel.prompt.collectAsState()
     val notice by viewModel.notice.collectAsState()
+    val mirrorEnabled by viewModel.mirrorEnabled.collectAsState()
     var deleting by remember { mutableStateOf<VoicePackEntry?>(null) }
     // 选文件的系统页回来时要知道是给哪个包导入的
     var importFor by rememberSaveable { mutableStateOf<String?>(null) }
@@ -104,6 +108,17 @@ fun VoicePacksSection(viewModel: VoicePacksViewModel) {
             stringResource(R.string.voice_packs_lead), Modifier.padding(top = 4.dp, bottom = 12.dp),
             style = MikaType.Body, color = MikaTheme.colors.ink2,
         )
+        // 和关于页「使用镜像下载」是同一个开关:国内连 GitHub 常常很慢,放在下载的地方让人看得到
+        GroupCard {
+            ListRow(
+                MikaIcons.Link,
+                stringResource(R.string.voice_pack_mirror),
+                note = stringResource(R.string.voice_pack_mirror_note),
+                first = true,
+            ) {
+                MikaSwitch(mirrorEnabled, viewModel::setMirrorEnabled, Modifier.testTag("voice-pack-mirror-switch"))
+            }
+        }
         notice?.let { n ->
             val (text, bad) = noticeText(n)
             FooterNote(text, Modifier.testTag("voice-pack-notice"), color = if (bad) MikaTheme.colors.bad else MikaTheme.colors.ink2)
@@ -111,6 +126,7 @@ fun VoicePacksSection(viewModel: VoicePacksViewModel) {
         cards.forEach { card ->
             VoicePackCardView(
                 card,
+                mirrorEnabled = mirrorEnabled,
                 onDownload = { viewModel.download(card.entry) },
                 onCancel = { viewModel.cancel(card.entry) },
                 onDelete = { deleting = card.entry },
@@ -160,6 +176,7 @@ fun VoicePacksSection(viewModel: VoicePacksViewModel) {
 @Composable
 private fun VoicePackCardView(
     card: VoicePackCard,
+    mirrorEnabled: Boolean,
     onDownload: () -> Unit,
     onCancel: () -> Unit,
     onDelete: () -> Unit,
@@ -200,8 +217,10 @@ private fun VoicePackCardView(
                 else LinearProgressIndicator(modifier = bar)
             }
             if (progress?.phase == DownloadPhase.Failed) {
+                // 没开镜像时先指给用户镜像这条路,连不上 GitHub 多半是这个原因
+                val failed = if (mirrorEnabled) R.string.voice_pack_download_failed else R.string.voice_pack_download_failed_mirror_off
                 Text(
-                    stringResource(R.string.voice_pack_download_failed), Modifier.padding(top = 6.dp).testTag("voice-pack-failed-$id"),
+                    stringResource(failed), Modifier.padding(top = 6.dp).testTag("voice-pack-failed-$id"),
                     style = MikaType.Hint, color = c.bad,
                 )
             }
@@ -283,6 +302,7 @@ private fun noticeText(n: VoicePackNotice): Pair<String, Boolean> {
         VoicePackNotice.NotStarted -> stringResource(R.string.voice_pack_not_started) to true
         VoicePackNotice.DeleteFailed -> stringResource(R.string.voice_pack_delete_failed) to true
         VoicePackNotice.Copied -> stringResource(R.string.voice_pack_copied) to false
+        VoicePackNotice.MirrorSaveFailed -> stringResource(R.string.about_mirrors_save_failed) to true
         is VoicePackNotice.Imported -> when (val r = n.result) {
             ImportResult.Installed -> stringResource(R.string.voice_pack_import_done) to false
             is ImportResult.Missing -> stringResource(R.string.voice_pack_import_missing, r.files.joinToString(", ")) to true

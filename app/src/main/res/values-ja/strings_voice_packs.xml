@@ -21,6 +21,9 @@
     <string name="voice_pack_import">ファイルからインポート</string>
     <string name="voice_pack_copy_urls">ダウンロードリンクをコピー</string>
     <string name="voice_pack_download_failed">ダウンロードが完了しませんでした。もう一度試すか、パソコンでファイルをダウンロードしてインポートしてください。</string>
+    <string name="voice_pack_mirror">ミラー経由でダウンロード</string>
+    <string name="voice_pack_mirror_note">GitHub が遅いかつながらないときにオンにします。ミラーは第三者が運営していますが、ダウンロード後のチェックサム確認は変わりません。「Mika について」の「ダウンロードにミラーを使う」と同じ設定です。</string>
+    <string name="voice_pack_download_failed_mirror_off">ダウンロードできませんでした。GitHub が遅いかつながらない場合は、上の「ミラー経由でダウンロード」をオンにしてもう一度試すか、パソコンでダウンロードしてファイルから読み込んでください。</string>
     <string name="voice_pack_metered_title">モバイルデータでダウンロードしますか？</string>
     <string name="voice_pack_metered_body">この音声パックは約 %1$s です。従量制のネットワーク（モバイルデータやテザリングなど）に接続しています。</string>
     <string name="voice_pack_metered_confirm">ダウンロードする</string>

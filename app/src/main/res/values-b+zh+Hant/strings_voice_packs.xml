@@ -21,6 +21,9 @@
     <string name="voice_pack_import">從檔案匯入</string>
     <string name="voice_pack_copy_urls">複製下載網址</string>
     <string name="voice_pack_download_failed">下載沒成功，可以重試，或在電腦上下載好後從檔案匯入。</string>
+    <string name="voice_pack_mirror">透過鏡像下載</string>
+    <string name="voice_pack_mirror_note">GitHub 很慢或連不上時打開。鏡像由第三方提供，下載完照樣核對校驗值。和「關於 Mika」裡的「使用鏡像下載」是同一個開關。</string>
+    <string name="voice_pack_download_failed_mirror_off">下載沒成功。GitHub 很慢或連不上時，打開上面的「透過鏡像下載」再試，或在電腦上下好後從檔案匯入。</string>
     <string name="voice_pack_metered_title">用行動數據下載？</string>
     <string name="voice_pack_metered_body">這個語音包約 %1$s。現在連的是按流量計費的網路（例如行動數據或熱點）。</string>
     <string name="voice_pack_metered_confirm">繼續下載</string>

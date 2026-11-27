@@ -21,6 +21,9 @@
     <string name="voice_pack_import">وارد کردن از فایل‌ها</string>
     <string name="voice_pack_copy_urls">کپی پیوندهای دانلود</string>
     <string name="voice_pack_download_failed">دانلود کامل نشد. دوباره امتحان کنید، یا فایل‌ها را روی رایانه دانلود و سپس وارد کنید.</string>
+    <string name="voice_pack_mirror">دانلود از طریق آینه‌ها</string>
+    <string name="voice_pack_mirror_note">وقتی GitHub کند است یا در دسترس نیست روشن کنید. آینه‌ها را اشخاص ثالث اداره می‌کنند، اما هر فایل همچنان با چک‌سام بررسی می‌شود. این همان تنظیم «استفاده از آینه‌ها برای دانلود» در «درباره Mika» است.</string>
+    <string name="voice_pack_download_failed_mirror_off">دانلود انجام نشد. اگر GitHub کند است یا در دسترس نیست، «دانلود از طریق آینه‌ها» را در بالا روشن کنید و دوباره امتحان کنید، یا روی رایانه دانلود کنید و از فایل‌ها وارد کنید.</string>
     <string name="voice_pack_metered_title">با اینترنت همراه دانلود شود؟</string>
     <string name="voice_pack_metered_body">حجم این بستهٔ صوتی حدود %1$s است. به شبکه‌ای با حجم محدود (مانند اینترنت همراه یا هات‌اسپات) وصل هستید.</string>
     <string name="voice_pack_metered_confirm">با این حال دانلود شود</string>

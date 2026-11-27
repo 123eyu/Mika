@@ -1,7 +1,9 @@
 package com.wangzan101.mika.voice.ui
 
 import android.content.Context
+import com.wangzan101.mika.MikaApp
 import com.wangzan101.mika.about.DownloadPhase
+import com.wangzan101.mika.about.UpdateMirrorStore
 import com.wangzan101.mika.download.DownloadProgress
 import com.wangzan101.mika.i18n.AppLanguage
 import com.wangzan101.mika.voice.model.VoiceModelEnvironment
@@ -57,6 +59,8 @@ sealed interface VoicePackNotice {
     data class Imported(val result: ImportResult) : VoicePackNotice
     data object DeleteFailed : VoicePackNotice
     data object Copied : VoicePackNotice
+    /** 「通过镜像下载」开关没存上。 */
+    data object MirrorSaveFailed : VoicePackNotice
 }
 
 /** 语音包卡片要用到的安装操作;App 里是 [VoicePackInstaller] 加 [VoicePackStore],测试换成假的。 */
@@ -73,6 +77,10 @@ interface VoicePackOps {
     suspend fun delete(entry: VoicePackEntry)
     suspend fun import(entry: VoicePackEntry, inputs: List<ImportInput>): ImportResult
     fun downloadUrls(entry: VoicePackEntry): String
+    /** 下载先走镜像(和关于页「使用镜像下载」是同一个设置,App 更新和语音包共用)。 */
+    val mirrorEnabled: StateFlow<Boolean>
+    /** 改这个开关;没存上返回 false。会写文件,不要在主线程调。 */
+    fun setMirrorEnabled(on: Boolean): Boolean
 }
 
 /**
@@ -190,6 +198,15 @@ class VoicePacksViewModel(
         }
     }
 
+    /** 下载先走镜像:GitHub 很慢或连不上时用。 */
+    val mirrorEnabled: StateFlow<Boolean> get() = ops.mirrorEnabled
+
+    fun setMirrorEnabled(on: Boolean) {
+        scope.launch(io) {
+            if (!ops.setMirrorEnabled(on)) _notice.value = VoicePackNotice.MirrorSaveFailed
+        }
+    }
+
     fun copyUrls(entry: VoicePackEntry) {
         copy(ops.downloadUrls(entry))
         _notice.value = VoicePackNotice.Copied
@@ -211,6 +228,7 @@ internal class AppVoicePackOps(
     private val store: VoicePackStore?,
     private val environment: VoiceModelEnvironment,
     private val installer: () -> VoicePackInstaller,
+    private val mirrors: UpdateMirrorStore,
 ) : VoicePackOps {
     override val packs: List<VoicePackEntry> = catalog?.packs.orEmpty()
     override fun runnable(entry: VoicePackEntry) = environment.runsVoicePack(entry)
@@ -222,11 +240,14 @@ internal class AppVoicePackOps(
     override suspend fun delete(entry: VoicePackEntry) = installer().delete(entry)
     override suspend fun import(entry: VoicePackEntry, inputs: List<ImportInput>) = installer().import(entry, inputs)
     override fun downloadUrls(entry: VoicePackEntry) = installer().downloadUrls(entry)
+    override val mirrorEnabled: StateFlow<Boolean> get() = mirrors.enabled
+    override fun setMirrorEnabled(on: Boolean) = mirrors.setEnabled(on) == null
 
     companion object {
         fun from(context: Context): AppVoicePackOps {
             val env = VoiceModelEnvironment.get(context)
-            return AppVoicePackOps(env.voicePackCatalogOrNull(), env.voicePacks, env) { VoicePackInstaller.get(context) }
+            val mirrors = (context.applicationContext as MikaApp).updateMirrors.also { it.ensureLoaded() }
+            return AppVoicePackOps(env.voicePackCatalogOrNull(), env.voicePacks, env, { VoicePackInstaller.get(context) }, mirrors)
         }
     }
 }

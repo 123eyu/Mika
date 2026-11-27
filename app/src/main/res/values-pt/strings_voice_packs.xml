@@ -21,6 +21,9 @@
     <string name="voice_pack_import">Importar de arquivos</string>
     <string name="voice_pack_copy_urls">Copiar links de download</string>
     <string name="voice_pack_download_failed">O download não terminou. Tente de novo, ou baixe os arquivos em um computador e importe-os.</string>
+    <string name="voice_pack_mirror">Baixar por espelhos</string>
+    <string name="voice_pack_mirror_note">Ative quando o GitHub estiver lento ou inacessível. Os espelhos são de terceiros; cada arquivo continua a ser verificado pela soma de verificação. É a mesma opção que «Usar espelhos para downloads» em Sobre o Mika.</string>
+    <string name="voice_pack_download_failed_mirror_off">O download falhou. Se o GitHub estiver lento ou inacessível, ative «Baixar por espelhos» acima e tente de novo, ou baixe num computador e importe dos arquivos.</string>
     <string name="voice_pack_metered_title">Baixar usando dados móveis?</string>
     <string name="voice_pack_metered_body">Este pacote de voz tem cerca de %1$s. Você está em uma rede limitada (como dados móveis ou um ponto de acesso).</string>
     <string name="voice_pack_metered_confirm">Baixar mesmo assim</string>
