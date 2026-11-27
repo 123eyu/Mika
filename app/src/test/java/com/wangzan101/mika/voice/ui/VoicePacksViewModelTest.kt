@@ -73,6 +73,12 @@ class VoicePacksViewModelTest {
             return importResult
         }
         override fun downloadUrls(entry: VoicePackEntry) = "https://example.invalid/${entry.id}--m.onnx"
+        override val mirrorEnabled = MutableStateFlow(false)
+        var mirrorSaves = true
+        override fun setMirrorEnabled(on: Boolean): Boolean {
+            if (mirrorSaves) mirrorEnabled.value = on
+            return mirrorSaves
+        }
     }
 
     private fun TestScope.vm(ops: VoicePackOps, recommended: VoicePackEntry? = null, copied: MutableList<String> = mutableListOf()) =
@@ -109,6 +115,25 @@ class VoicePacksViewModelTest {
         // 取消下载:进度没了
         vm.cancel(pack)
         assertNull(vm.cards.value.single().progress)
+    }
+
+    @Test fun mirrorSwitchWritesTheSharedSetting() = runTest(UnconfinedTestDispatcher()) {
+        val ops = FakeOps(listOf(entry("sense")))
+        val vm = vm(ops)
+        assertFalse(vm.mirrorEnabled.value)
+        vm.setMirrorEnabled(true)
+        assertTrue(vm.mirrorEnabled.value)
+        assertNull(vm.notice.value)
+        vm.setMirrorEnabled(false)
+        assertFalse(vm.mirrorEnabled.value)
+    }
+
+    @Test fun mirrorSwitchThatCannotSaveSaysSo() = runTest(UnconfinedTestDispatcher()) {
+        val ops = FakeOps(listOf(entry("sense"))).apply { mirrorSaves = false }
+        val vm = vm(ops)
+        vm.setMirrorEnabled(true)
+        assertFalse(vm.mirrorEnabled.value)
+        assertEquals(VoicePackNotice.MirrorSaveFailed, vm.notice.value)
     }
 
     @Test fun noSpaceShowsMessageWithoutStarting() = runTest(UnconfinedTestDispatcher()) {

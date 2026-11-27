@@ -21,6 +21,9 @@
     <string name="voice_pack_import">从文件导入</string>
     <string name="voice_pack_copy_urls">复制下载地址</string>
     <string name="voice_pack_download_failed">下载没成功，可以重试，或在电脑上下好后从文件导入。</string>
+    <string name="voice_pack_mirror">通过镜像下载</string>
+    <string name="voice_pack_mirror_note">GitHub 很慢或连不上时打开。镜像由第三方提供，下载完照样核对校验值。和「关于 Mika」里的「使用镜像下载」是同一个开关。</string>
+    <string name="voice_pack_download_failed_mirror_off">下载没成功。GitHub 很慢或连不上时，打开上面的「通过镜像下载」再试，或在电脑上下好后从文件导入。</string>
     <string name="voice_pack_metered_title">用流量下载？</string>
     <string name="voice_pack_metered_body">这个语音包约 %1$s。现在连的是按流量计费的网络（比如移动数据或热点）。</string>
     <string name="voice_pack_metered_confirm">继续下载</string>

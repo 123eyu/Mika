@@ -21,6 +21,9 @@
     <string name="voice_pack_import">استيراد من الملفات</string>
     <string name="voice_pack_copy_urls">نسخ روابط التنزيل</string>
     <string name="voice_pack_download_failed">لم يكتمل التنزيل. حاول مرة أخرى، أو نزّل الملفات على حاسوب ثم استوردها.</string>
+    <string name="voice_pack_mirror">التنزيل عبر المرايا</string>
+    <string name="voice_pack_mirror_note">فعّله عندما يكون GitHub بطيئًا أو لا يمكن الوصول إليه. المرايا يديرها طرف ثالث، ومع ذلك يُتحقق من كل ملف بمجموع التحقق. هذا هو نفس إعداد «استخدام المرايا للتنزيلات» في «حول Mika».</string>
+    <string name="voice_pack_download_failed_mirror_off">تعذّر التنزيل. إذا كان GitHub بطيئًا أو لا يمكن الوصول إليه، ففعّل «التنزيل عبر المرايا» أعلاه وحاول مجددًا، أو نزّله على حاسوب ثم استورده من الملفات.</string>
     <string name="voice_pack_metered_title">التنزيل عبر بيانات الجوال؟</string>
     <string name="voice_pack_metered_body">حجم حزمة الصوت هذه نحو %1$s. أنت متصل بشبكة محدودة البيانات (مثل بيانات الجوال أو نقطة اتصال).</string>
     <string name="voice_pack_metered_confirm">التنزيل على أي حال</string>

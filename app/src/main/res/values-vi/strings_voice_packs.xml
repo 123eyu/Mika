@@ -21,6 +21,9 @@
     <string name="voice_pack_import">Nhập từ tệp</string>
     <string name="voice_pack_copy_urls">Sao chép liên kết tải xuống</string>
     <string name="voice_pack_download_failed">Tải xuống chưa xong. Hãy thử lại, hoặc tải tệp trên máy tính rồi nhập vào.</string>
+    <string name="voice_pack_mirror">Tải qua mirror</string>
+    <string name="voice_pack_mirror_note">Bật khi GitHub chậm hoặc không kết nối được. Mirror do bên thứ ba vận hành; mọi tệp vẫn được kiểm tra bằng mã checksum. Đây cũng là tùy chọn “Dùng mirror để tải xuống” trong Giới thiệu Mika.</string>
+    <string name="voice_pack_download_failed_mirror_off">Tải xuống không thành công. Nếu GitHub chậm hoặc không kết nối được, hãy bật “Tải qua mirror” ở trên rồi thử lại, hoặc tải trên máy tính rồi nhập từ tệp.</string>
     <string name="voice_pack_metered_title">Tải xuống bằng dữ liệu di động?</string>
     <string name="voice_pack_metered_body">Gói giọng nói này khoảng %1$s. Bạn đang dùng mạng tính phí theo dung lượng (như dữ liệu di động hoặc điểm phát sóng).</string>
     <string name="voice_pack_metered_confirm">Vẫn tải xuống</string>

@@ -21,6 +21,9 @@
     <string name="voice_pack_import">파일에서 가져오기</string>
     <string name="voice_pack_copy_urls">다운로드 링크 복사</string>
     <string name="voice_pack_download_failed">다운로드가 끝나지 않았습니다. 다시 시도하거나, 컴퓨터에서 파일을 받아 가져오세요.</string>
+    <string name="voice_pack_mirror">미러로 다운로드</string>
+    <string name="voice_pack_mirror_note">GitHub가 느리거나 연결되지 않을 때 켜세요. 미러는 제3자가 운영하지만 다운로드 후 체크섬 확인은 그대로입니다. \'Mika 정보\'의 \'다운로드에 미러 사용\'과 같은 설정입니다.</string>
+    <string name="voice_pack_download_failed_mirror_off">다운로드하지 못했습니다. GitHub가 느리거나 연결되지 않으면 위의 \'미러로 다운로드\'를 켜고 다시 시도하거나, 컴퓨터에서 받은 뒤 파일에서 가져오세요.</string>
     <string name="voice_pack_metered_title">모바일 데이터로 다운로드할까요?</string>
     <string name="voice_pack_metered_body">이 음성 팩은 약 %1$s입니다. 지금 데이터 요금이 부과되는 네트워크(모바일 데이터, 핫스팟 등)에 연결되어 있습니다.</string>
     <string name="voice_pack_metered_confirm">그래도 다운로드</string>

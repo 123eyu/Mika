@@ -21,6 +21,9 @@
     <string name="voice_pack_import">Import from files</string>
     <string name="voice_pack_copy_urls">Copy download links</string>
     <string name="voice_pack_download_failed">The download didn’t finish. Try again, or download the files on a computer and import them.</string>
+    <string name="voice_pack_mirror">Download via mirrors</string>
+    <string name="voice_pack_mirror_note">Turn on when GitHub is slow or unreachable. Mirrors are run by third parties; every file is still checked against its checksum. Same setting as “Use mirrors for downloads” in About Mika.</string>
+    <string name="voice_pack_download_failed_mirror_off">Download failed. If GitHub is slow or unreachable, turn on “Download via mirrors” above and try again, or download on a computer and import from files.</string>
     <string name="voice_pack_metered_title">Download over mobile data?</string>
     <string name="voice_pack_metered_body">This voice pack is about %1$s. You’re on a metered network (such as mobile data or a hotspot).</string>
     <string name="voice_pack_metered_confirm">Download anyway</string>

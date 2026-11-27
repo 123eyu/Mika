@@ -21,6 +21,9 @@
     <string name="voice_pack_import">Impor dari file</string>
     <string name="voice_pack_copy_urls">Salin tautan unduhan</string>
     <string name="voice_pack_download_failed">Unduhan tidak selesai. Coba lagi, atau unduh file di komputer lalu impor.</string>
+    <string name="voice_pack_mirror">Unduh lewat mirror</string>
+    <string name="voice_pack_mirror_note">Aktifkan jika GitHub lambat atau tidak bisa dijangkau. Mirror dikelola pihak ketiga; setiap file tetap dicek dengan checksum-nya. Ini pengaturan yang sama dengan “Gunakan mirror untuk unduhan” di Tentang Mika.</string>
+    <string name="voice_pack_download_failed_mirror_off">Unduhan gagal. Jika GitHub lambat atau tidak bisa dijangkau, aktifkan “Unduh lewat mirror” di atas lalu coba lagi, atau unduh di komputer lalu impor dari file.</string>
     <string name="voice_pack_metered_title">Unduh dengan data seluler?</string>
     <string name="voice_pack_metered_body">Paket suara ini sekitar %1$s. Anda memakai jaringan berkuota (seperti data seluler atau hotspot).</string>
     <string name="voice_pack_metered_confirm">Tetap unduh</string>

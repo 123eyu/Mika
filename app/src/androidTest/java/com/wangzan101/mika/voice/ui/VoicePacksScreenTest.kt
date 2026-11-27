@@ -11,9 +11,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -106,6 +108,11 @@ class VoicePacksScreenTest {
         override suspend fun import(entry: VoicePackEntry, inputs: List<VoicePackInstaller.ImportInput>) =
             VoicePackInstaller.ImportResult.Installed
         override fun downloadUrls(entry: VoicePackEntry) = "https://example.invalid/m.onnx"
+        override val mirrorEnabled = MutableStateFlow(false)
+        override fun setMirrorEnabled(on: Boolean): Boolean {
+            mirrorEnabled.value = on
+            return true
+        }
     }
 
     private fun showSection(ops: FakeOps) = compose.setContent {
@@ -161,6 +168,23 @@ class VoicePacksScreenTest {
         waitTag("voice-pack-redownload-test-pack")
         compose.onNodeWithText("已安装", substring = true).assertExists()
         assertEquals(emptyList<String>(), ops.deleted)
+    }
+
+    /** 下载失败、没开镜像:提示指向页面上的「通过镜像下载」;打开后回到普通的失败提示。 */
+    @Test fun failedDownloadPointsToTheMirrorSwitchUntilItIsOn() {
+        val ops = FakeOps(listOf(pack))
+        showSection(ops)
+        compose.onNodeWithText("通过镜像下载").assertExists()
+        ops.flow.value = DownloadProgress(DownloadPhase.Failed, 0, 100)
+        waitTag("voice-pack-failed-test-pack")
+        compose.onNodeWithTag("voice-pack-failed-test-pack").assertTextContains("打开上面的「通过镜像下载」", substring = true)
+
+        compose.onNodeWithTag("voice-pack-mirror-switch").performClick()
+        assertEquals(true, ops.mirrorEnabled.value)
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithText("下载没成功，可以重试", substring = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("voice-pack-download-test-pack").assertExists()
     }
 
     @Test fun meteredNetworkAsksBeforeDownloading() {
