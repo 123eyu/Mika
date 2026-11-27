@@ -9,6 +9,7 @@ import com.wangzan101.mika.voice.SpeechEngineSpec
 import com.wangzan101.mika.voice.SpeechFailure
 import com.wangzan101.mika.voice.model.VoiceModelError
 import com.wangzan101.mika.voice.ondevice.OnDeviceLanguage
+import com.wangzan101.mika.voice.ondevice.OnDeviceSttException
 import com.wangzan101.mika.voice.ondevice.VoicePackCatalog
 import com.wangzan101.mika.voice.ondevice.VoicePackEntry
 import com.wangzan101.mika.voice.ondevice.VoicePackFile
@@ -26,6 +27,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.After
+import org.junit.Before
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class VoicePacksViewModelTest {
@@ -162,15 +165,47 @@ class VoicePacksViewModelTest {
         assertEquals(VoicePackNotice.Copied, vm.notice.value)
     }
 
+    private var savedTexts: com.wangzan101.mika.i18n.UiTexts? = null
+
+    @Before fun saveTexts() {
+        savedTexts = UiText.source
+    }
+
+    @After fun restoreTexts() {
+        UiText.source = savedTexts
+    }
+
+    private fun onDeviceFailure(kind: OnDeviceSttException.Kind) =
+        VoiceCopy.failure(SpeechFailure.Provider(VoiceModelError.from(OnDeviceSttException(kind, "native detail"), packId = "p")))
+
     @Test fun onDeviceFailureShowsCorruptPackCopy() {
         UiText.source = ResFileTexts.chinese
-        assertEquals("语音包已损坏，请重新下载", VoiceCopy.failure(SpeechFailure.Provider(VoiceModelError.OnDeviceFailed("Corrupt model"))))
+        assertEquals("语音包已损坏，请重新下载", onDeviceFailure(OnDeviceSttException.Kind.Corrupt))
+        // 损坏包在别的错误里面(加载失败的包装)也认得出
+        val wrapped = VoiceModelError.OnDeviceFailed("On-device recognition failed", RuntimeException(OnDeviceSttException(OnDeviceSttException.Kind.Corrupt, "bad")))
+        assertEquals("语音包已损坏，请重新下载", VoiceCopy.failure(SpeechFailure.Provider(wrapped)))
         UiText.source = ResFileTexts.english
-        val english = VoiceCopy.failure(SpeechFailure.Provider(VoiceModelError.OnDeviceFailed("Corrupt model")))
-        assertFalse(english.contains("Corrupt model"))
-        // 别的服务商错误照旧
-        assertTrue(VoiceCopy.failure(SpeechFailure.Provider(VoiceModelError.PackMissing("x"))).isNotBlank())
+        assertFalse(onDeviceFailure(OnDeviceSttException.Kind.Corrupt).contains("native detail"))
+        // 本机语音包没装:和开不了会话时同一句
         assertEquals(VoiceCopy.unavailable(SpeechEngineSpec.Why.VoicePackMissing), VoiceCopy.failure(SpeechFailure.Provider(VoiceModelError.PackMissing("x"))))
+    }
+
+    /** 超时、内存不足、设备跑不了、取消、模型被释放:重新下载没用,只说请重试,也不露英文原因。 */
+    @Test fun otherOnDeviceFailuresShowGenericRetryCopy() {
+        UiText.source = ResFileTexts.chinese
+        for (kind in listOf(OnDeviceSttException.Kind.Timeout, OnDeviceSttException.Kind.OutOfMemory, OnDeviceSttException.Kind.Unsupported)) {
+            assertEquals(kind.name, "离线识别失败，请重试", onDeviceFailure(kind))
+        }
+        val plain = listOf(
+            VoiceModelError.OnDeviceFailed("On-device recognition took longer than 30000 ms"),
+            VoiceModelError.OnDeviceFailed("On-device recognition was cancelled", kotlinx.coroutines.CancellationException("x")),
+            VoiceModelError.OnDeviceFailed("On-device model was released", IllegalStateException("released")),
+        )
+        plain.forEach { assertEquals(it.detail, "离线识别失败，请重试", VoiceCopy.failure(SpeechFailure.Provider(it))) }
+        UiText.source = ResFileTexts.english
+        val english = onDeviceFailure(OnDeviceSttException.Kind.Timeout)
+        assertFalse(english.contains("native detail"))
+        assertFalse(english == VoiceCopy.failure(SpeechFailure.Provider(VoiceModelError.from(OnDeviceSttException(OnDeviceSttException.Kind.Corrupt, "x"), "p"))))
     }
 
     @Test fun voicePackHintActionOnlyForNoEngineCases() {

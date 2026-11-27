@@ -38,5 +38,6 @@
     <string name="voice_pack_copied">Ссылки для загрузки скопированы.</string>
     <string name="voice_pack_needs_download">Нужно загрузить</string>
     <string name="voice_pack_corrupt_error">Голосовой пакет повреждён. Загрузите его заново.</string>
+    <string name="voice_on_device_failed">Не удалось распознать речь офлайн. Повторите попытку.</string>
     <string name="voice_go_voice_packs">Загрузить офлайн-голосовой пакет</string>
 </resources>

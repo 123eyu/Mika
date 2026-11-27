@@ -38,5 +38,6 @@
     <string name="voice_pack_copied">Links de download copiados.</string>
     <string name="voice_pack_needs_download">Precisa baixar</string>
     <string name="voice_pack_corrupt_error">O pacote de voz está danificado. Baixe-o novamente.</string>
+    <string name="voice_on_device_failed">O reconhecimento offline falhou. Tente de novo.</string>
     <string name="voice_go_voice_packs">Baixar um pacote de voz offline</string>
 </resources>

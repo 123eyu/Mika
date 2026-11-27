@@ -38,5 +38,6 @@
     <string name="voice_pack_copied">已複製下載網址。</string>
     <string name="voice_pack_needs_download">需要下載</string>
     <string name="voice_pack_corrupt_error">語音包已損壞，請重新下載</string>
+    <string name="voice_on_device_failed">離線辨識失敗，請重試</string>
     <string name="voice_go_voice_packs">下載離線語音包</string>
 </resources>

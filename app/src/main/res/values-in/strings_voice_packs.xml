@@ -38,5 +38,6 @@
     <string name="voice_pack_copied">Tautan unduhan disalin.</string>
     <string name="voice_pack_needs_download">Perlu diunduh</string>
     <string name="voice_pack_corrupt_error">Paket suara rusak. Silakan unduh ulang.</string>
+    <string name="voice_on_device_failed">Pengenalan offline gagal. Coba lagi.</string>
     <string name="voice_go_voice_packs">Unduh paket suara offline</string>
 </resources>

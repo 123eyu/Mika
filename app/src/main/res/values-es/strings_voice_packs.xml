@@ -38,5 +38,6 @@
     <string name="voice_pack_copied">Enlaces de descarga copiados.</string>
     <string name="voice_pack_needs_download">Hay que descargar</string>
     <string name="voice_pack_corrupt_error">El paquete de voz está dañado. Vuelve a descargarlo.</string>
+    <string name="voice_on_device_failed">Falló el reconocimiento sin conexión. Inténtalo de nuevo.</string>
     <string name="voice_go_voice_packs">Descargar un paquete de voz sin conexión</string>
 </resources>

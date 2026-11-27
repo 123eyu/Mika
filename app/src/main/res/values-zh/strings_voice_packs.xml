@@ -38,5 +38,6 @@
     <string name="voice_pack_copied">已复制下载地址。</string>
     <string name="voice_pack_needs_download">需要下载</string>
     <string name="voice_pack_corrupt_error">语音包已损坏，请重新下载</string>
+    <string name="voice_on_device_failed">离线识别失败，请重试</string>
     <string name="voice_go_voice_packs">下载离线语音包</string>
 </resources>

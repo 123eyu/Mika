@@ -38,5 +38,6 @@
     <string name="voice_pack_copied">Đã sao chép liên kết tải xuống.</string>
     <string name="voice_pack_needs_download">Cần tải xuống</string>
     <string name="voice_pack_corrupt_error">Gói giọng nói bị hỏng. Vui lòng tải xuống lại.</string>
+    <string name="voice_on_device_failed">Nhận dạng ngoại tuyến không thành công. Hãy thử lại.</string>
     <string name="voice_go_voice_packs">Tải gói giọng nói ngoại tuyến</string>
 </resources>

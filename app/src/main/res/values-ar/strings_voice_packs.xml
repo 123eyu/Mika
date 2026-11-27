@@ -38,5 +38,6 @@
     <string name="voice_pack_copied">نُسخت روابط التنزيل.</string>
     <string name="voice_pack_needs_download">يلزم التنزيل</string>
     <string name="voice_pack_corrupt_error">حزمة الصوت تالفة. يرجى تنزيلها مجددًا.</string>
+    <string name="voice_on_device_failed">فشل التعرّف دون اتصال. حاول مرة أخرى.</string>
     <string name="voice_go_voice_packs">تنزيل حزمة صوت دون اتصال</string>
 </resources>

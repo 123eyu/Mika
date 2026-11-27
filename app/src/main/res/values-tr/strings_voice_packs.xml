@@ -38,5 +38,6 @@
     <string name="voice_pack_copied">İndirme bağlantıları kopyalandı.</string>
     <string name="voice_pack_needs_download">İndirilmeli</string>
     <string name="voice_pack_corrupt_error">Ses paketi bozuk. Lütfen yeniden indirin.</string>
+    <string name="voice_on_device_failed">Çevrimdışı tanıma başarısız oldu. Tekrar deneyin.</string>
     <string name="voice_go_voice_packs">Çevrimdışı ses paketi indir</string>
 </resources>

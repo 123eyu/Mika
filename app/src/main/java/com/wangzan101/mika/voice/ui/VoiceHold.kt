@@ -106,6 +106,7 @@ import com.wangzan101.mika.voice.model.VoiceModelError
 import com.wangzan101.mika.voice.HoldToTalk
 import com.wangzan101.mika.voice.SpeechEngineSpec
 import com.wangzan101.mika.voice.model.VoiceModelEnvironment
+import com.wangzan101.mika.voice.ondevice.OnDeviceSttException
 import com.wangzan101.mika.voice.SpeechFailure
 import com.wangzan101.mika.voice.VoiceSource
 import kotlinx.coroutines.CoroutineScope
@@ -196,6 +197,16 @@ internal fun HeardText(stable: String, tail: String, style: androidx.compose.ui.
 }
 
 /** 按住说话时界面上要的文字;不碰界面,单测直接测。 */
+/**
+ * 本机识别失败给用户的那一句:原因链里是「文件损坏」([OnDeviceSttException.Kind.Corrupt])才说「语音包已损坏,请重新下载」;
+ * 超时、内存不足、取消、模型被释放、清单读不了等重新下载没用,只说「离线识别失败,请重试」。
+ */
+internal fun onDeviceFailureText(error: VoiceModelError.OnDeviceFailed): Int {
+    val corrupt = generateSequence<Throwable>(error) { it.cause }.take(8)
+        .any { it is OnDeviceSttException && it.kind == OnDeviceSttException.Kind.Corrupt }
+    return if (corrupt) R.string.voice_pack_corrupt_error else R.string.voice_on_device_failed
+}
+
 internal object VoiceCopy {
     /** 一句说完的地方:这些标点之后断开。 */
     private val sentenceEnd = setOf('。', '！', '？', '；', '!', '?', ';', '.', '…', '\n')
@@ -245,8 +256,8 @@ internal object VoiceCopy {
         is SpeechFailure.Provider -> when (why.error) {
             // 本机语音包没装:和开不了会话时同一句「需要下载」
             is VoiceModelError.PackMissing -> unavailable(SpeechEngineSpec.Why.VoicePackMissing)
-            // 本机识别失败(文件坏了、加载不了):说该怎么办,不露英文的原因
-            is VoiceModelError.OnDeviceFailed -> tr(R.string.voice_pack_corrupt_error)
+            // 本机识别失败:说该怎么办,不露英文的原因(只有文件坏了才叫人重新下载)
+            is VoiceModelError.OnDeviceFailed -> tr(onDeviceFailureText(why.error))
             // 服务商的错沿用模型出错时的说法(额度、Key、找不到模型……)
             else -> tr(R.string.voice_provider_failed, why.error.message.orEmpty())
         }

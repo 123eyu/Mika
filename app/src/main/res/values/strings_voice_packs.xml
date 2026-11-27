@@ -38,5 +38,6 @@
     <string name="voice_pack_copied">Download links copied.</string>
     <string name="voice_pack_needs_download">Needs download</string>
     <string name="voice_pack_corrupt_error">The voice pack is damaged. Please download it again.</string>
+    <string name="voice_on_device_failed">Offline recognition failed. Try again.</string>
     <string name="voice_go_voice_packs">Download an offline voice pack</string>
 </resources>

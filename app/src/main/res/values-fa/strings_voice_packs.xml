@@ -38,5 +38,6 @@
     <string name="voice_pack_copied">پیوندهای دانلود کپی شد.</string>
     <string name="voice_pack_needs_download">نیاز به دانلود</string>
     <string name="voice_pack_corrupt_error">بستهٔ صوتی خراب است. لطفاً دوباره دانلودش کنید.</string>
+    <string name="voice_on_device_failed">تشخیص آفلاین ناموفق بود. دوباره امتحان کنید.</string>
     <string name="voice_go_voice_packs">دانلود بستهٔ صوتی آفلاین</string>
 </resources>

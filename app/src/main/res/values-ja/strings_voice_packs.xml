@@ -38,5 +38,6 @@
     <string name="voice_pack_copied">ダウンロードリンクをコピーしました。</string>
     <string name="voice_pack_needs_download">要ダウンロード</string>
     <string name="voice_pack_corrupt_error">音声パックが破損しています。再ダウンロードしてください。</string>
+    <string name="voice_on_device_failed">オフライン認識に失敗しました。もう一度お試しください。</string>
     <string name="voice_go_voice_packs">オフライン音声パックをダウンロード</string>
 </resources>

@@ -256,13 +256,13 @@ internal fun VoicePickerSheet(
 }
 
 /**
- * 试转失败时给用户看的一句:本机语音包的失败换成该怎么办(没装是「需要下载」,其余是「已损坏,请重新下载」),
+ * 试转失败时给用户看的一句:本机语音包的失败换成该怎么办(没装是「需要下载」,文件坏了是「已损坏,请重新下载」,其余是「请重试」),
  * 不露英文的原因;别的照旧是服务商的原话。
  */
 @Composable
 internal fun voiceErrorText(error: VoiceModelError): String = when (error) {
     is VoiceModelError.PackMissing -> stringResource(R.string.voice_pack_needs_download)
-    is VoiceModelError.OnDeviceFailed -> stringResource(R.string.voice_pack_corrupt_error)
+    is VoiceModelError.OnDeviceFailed -> stringResource(onDeviceFailureText(error))
     else -> error.detail
 }
 
