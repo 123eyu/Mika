@@ -139,7 +139,13 @@ class VoiceAdapterRegistryTest {
     )
 
     @Test fun `registry resolves every currently supported protocol`() {
-        val registry = VoiceAdapterRegistry()
+        val registry = VoiceAdapterRegistry(
+            sttAdapters = VoiceAdapterRegistry.defaultSttAdapters() + com.wangzan101.mika.voice.model.adapters.testOnDeviceAdapter(
+                java.io.File("/nonexistent"), com.wangzan101.mika.voice.model.adapters.FakeOnDeviceBackend(),
+            ),
+        )
+        // 本机语音包要用 App 的文件目录,不在不依赖设备的默认列表里,由 VoiceModelEnvironment.get 加上
+        assertTrue(VoiceAdapterRegistry.defaultSttAdapters().none { it.protocol == SttProtocol.OnDevice })
 
         SttProtocol.entries.forEach { protocol ->
             val account = when (protocol) {

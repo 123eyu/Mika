@@ -1,5 +1,7 @@
 package com.wangzan101.mika.voice.model
 
+import com.wangzan101.mika.voice.ondevice.OnDeviceCatalog
+import com.wangzan101.mika.voice.ondevice.VoicePackEntry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -94,6 +96,45 @@ class VoiceCatalogStore(
             current.copy(
                 models = models,
                 selections = pruneSelections(current.selections, models),
+                verifications = current.verifications.filterNot {
+                    it.ref.serviceId == ref.serviceId && it.ref.modelId == ref.modelId
+                },
+            )
+        }
+    }
+
+    /** 装好一个语音包:本机服务(第一次时)和这个包的模型一次写进快照。已有的同名模型按新版本覆盖。 */
+    @Synchronized
+    fun installVoicePack(entry: VoicePackEntry) {
+        val model = OnDeviceCatalog.model(entry)
+        commit { current ->
+            val services = if (current.services.any { it.id == OnDeviceCatalog.SERVICE_ID }) {
+                current.services.map { if (it.id == OnDeviceCatalog.SERVICE_ID) OnDeviceCatalog.SERVICE else it }
+            } else {
+                current.services + OnDeviceCatalog.SERVICE
+            }
+            val existing = current.models.any { it.sameIdentity(model.serviceId, model.id) }
+            val models = if (existing) current.models.map { if (it.sameIdentity(model.serviceId, model.id)) model else it }
+            else current.models + model
+            current.copy(services = services, models = models, selections = pruneSelections(current.selections, models))
+        }
+    }
+
+    /**
+     * 用户删掉一个语音包:删它的模型,备援链里有它的照 [deleteModel] 去掉。
+     * 和 [deleteModel] 有一处故意不同:语音输入选中的是它时回到「自动」,不是「关闭」。
+     * 删模型设成关闭,是为了不悄悄换成要花钱的服务商;「自动」只用手机自带识别或别的本机语音包,不花钱、不出手机。
+     */
+    @Synchronized
+    fun removeVoicePack(packId: String) {
+        val ref = OnDeviceCatalog.ref(packId)
+        commit { current ->
+            val models = current.models.filterNot { it.sameIdentity(ref.serviceId, ref.modelId) }
+            val pruned = pruneSelections(current.selections, models)
+            val selected = (current.selections.stt as? SttSelection.Model)?.ref == ref
+            current.copy(
+                models = models,
+                selections = if (selected) pruned.copy(stt = SttSelection.Auto) else pruned,
                 verifications = current.verifications.filterNot {
                     it.ref.serviceId == ref.serviceId && it.ref.modelId == ref.modelId
                 },

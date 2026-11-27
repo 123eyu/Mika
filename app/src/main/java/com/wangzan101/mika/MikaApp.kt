@@ -705,9 +705,9 @@ class MikaApp : Application(), WebOwner, SandboxOwner, TaskEnvironment.Owner, Ph
                 .onFailure { Log.w("MikaImport", "Could not clean device import staging", it) }
             // 离线语音包:上次没下完的 staging、旧版本、清单里已没有的包
             runCatching {
-                val catalog = com.wangzan101.mika.voice.ondevice.VoicePackCatalog.load(
-                    this@MikaApp, com.wangzan101.mika.voice.ondevice.OnDeviceBackends()::supports)
-                com.wangzan101.mika.voice.ondevice.VoicePackStore(java.io.File(filesDir, "voice-models")).cleanup(catalog)
+                // 和语音目录用同一份存放和清单(见 VoiceModelEnvironment)
+                val voice = com.wangzan101.mika.voice.model.VoiceModelEnvironment.get(this@MikaApp)
+                voice.voicePacks?.cleanup(voice.voicePackCatalog!!())
             }.onFailure { Log.w("MikaVoice", "Could not clean voice packs", it) }
         }
         // 界面以外的文字(通知、服务、悬浮胶囊)按 App 语言取

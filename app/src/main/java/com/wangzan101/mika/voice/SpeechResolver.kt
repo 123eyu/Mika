@@ -20,12 +20,19 @@ sealed interface SpeechEngineSpec {
     data class Bailian(val model: String, val region: BailianRegion, val workspace: String = "", val language: AsrLanguage = AsrLanguage.Auto) : SpeechEngineSpec
     /** A vendor's own recognition API (upload per utterance). */
     data class Vendor(val model: String) : SpeechEngineSpec
+    /** 本机离线识别,用已安装的语音包 [packId]。 */
+    data class OnDevice(val packId: String) : SpeechEngineSpec
     data class Unavailable(val why: Why) : SpeechEngineSpec
     /**
      * [SystemNoResponse]:手机自带识别系统说有,但请求发过去一直没有回应(已记下,用户重新选它时清掉)。
      * [SystemFailed]:手机自带识别未能启动,可以重试;不据此认定服务不存在或麦克风被占用。
+     * [VoicePackMissing]:选中的本机语音包没装(比如从备份恢复后),下载后不用重新选就能用。
+     * [OnDeviceUnsupported]:这台设备跑不了本机识别(处理器架构不支持),或者是通话这种用不了它的场合。
      */
-    enum class Why { Off, NoSystemNoModel, SystemGone, SystemNoResponse, SystemFailed, ProviderGone, DoubaoNotConfigured, BailianNotConfigured }
+    enum class Why {
+        Off, NoSystemNoModel, SystemGone, SystemNoResponse, SystemFailed, ProviderGone, DoubaoNotConfigured, BailianNotConfigured,
+        VoicePackMissing, OnDeviceUnsupported,
+    }
 }
 
 /** 把用户的选择、手机能力和现有服务商对起来,得出这次用哪个引擎。纯函数,不碰系统。 */

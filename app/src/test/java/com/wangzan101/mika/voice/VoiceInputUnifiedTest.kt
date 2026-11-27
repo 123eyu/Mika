@@ -176,7 +176,8 @@ class VoiceInputUnifiedTest {
             val expectedLanguage = if (protocol == SttProtocol.FunAsrStreaming || protocol == SttProtocol.BailianStreaming) "yue" else "en-US"
             assertEquals(protocol.name, expectedLanguage, started[protocol])
         }
-        assertEquals(SttProtocol.entries.toSet(), started.keys)
+        // 本机语音包不经会话工厂(录音用真麦克风),见 OnDeviceSttAdapterTest
+        assertEquals(SttProtocol.entries.toSet() - SttProtocol.OnDevice, started.keys)
     }
 
     @Test fun `corrupt migrated catalog never falls back to auto system recognition`() = runBlocking {
@@ -238,5 +239,32 @@ class VoiceInputUnifiedTest {
         } finally {
             server.shutdown()
         }
+    }
+
+    @Test fun `a missing or unsupported voice pack is reported as such, not as a gone provider`() = runBlocking {
+        val root = tmp.newFolder("voice-models")
+        val entry = com.wangzan101.mika.voice.model.adapters.testPackEntry("sense")
+        val catalog = VoiceCatalogStore(MemoryVoiceCatalogBackend(), migrated = true)
+        catalog.installVoicePack(entry)
+        catalog.setSttSelection(SttSelection.Model(com.wangzan101.mika.voice.ondevice.OnDeviceCatalog.ref("sense")))
+        fun registry(abi: Boolean) = VoiceAdapterRegistry(
+            sttAdapters = listOf(com.wangzan101.mika.voice.model.adapters.testOnDeviceAdapter(
+                root, com.wangzan101.mika.voice.model.adapters.FakeOnDeviceBackend(abi = abi), entry,
+            )),
+        )
+
+        val missing = input(catalog, registry(abi = true))
+        assertEquals(SpeechEngineSpec.Unavailable(SpeechEngineSpec.Why.VoicePackMissing), missing.spec())
+        assertEquals(
+            SpeechEvent.Failed(SpeechFailure.Unavailable(SpeechEngineSpec.Why.VoicePackMissing)),
+            missing.start("zh-CN").events.single(),
+        )
+
+        com.wangzan101.mika.voice.model.adapters.installTestPack(root, entry)
+        assertEquals(SpeechEngineSpec.OnDevice("sense"), missing.spec())
+        assertEquals(
+            SpeechEngineSpec.Unavailable(SpeechEngineSpec.Why.OnDeviceUnsupported),
+            input(catalog, registry(abi = false)).spec(),
+        )
     }
 }

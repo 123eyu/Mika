@@ -77,6 +77,8 @@ internal fun VoiceModel.traits(capability: VoiceCapability): List<VoiceTrait> = 
         SttProtocol.ElevenLabsUpload, SttProtocol.DeepgramUpload, SttProtocol.AzureShortAudio,
         SttProtocol.TencentSentence, SttProtocol.XfyunDictation,
         -> listOf(VoiceTrait.AfterSpeech)
+        // 本机语音包:松手后整段转写,不花钱(列表里的「本机 · 离线」标注在语音包界面那一步加)
+        SttProtocol.OnDevice -> listOf(VoiceTrait.AfterSpeech, VoiceTrait.Free)
         null -> emptyList()
     }
     VoiceCapability.TTS -> when (tts?.protocol) {

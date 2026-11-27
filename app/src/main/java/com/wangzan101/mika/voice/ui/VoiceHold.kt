@@ -102,6 +102,7 @@ import com.wangzan101.mika.ui.theme.MikaTheme
 import com.wangzan101.mika.ui.theme.MikaType
 import com.wangzan101.mika.ui.theme.MikaRadius
 import com.wangzan101.mika.ui.theme.MikaShapes
+import com.wangzan101.mika.voice.model.VoiceModelError
 import com.wangzan101.mika.voice.HoldToTalk
 import com.wangzan101.mika.voice.SpeechEngineSpec
 import com.wangzan101.mika.voice.SpeechFailure
@@ -231,6 +232,7 @@ internal object VoiceCopy {
         is SpeechEngineSpec.System -> tr(if (spec.onDevice) R.string.voice_engine_phone_offline else R.string.voice_engine_phone)
         is SpeechEngineSpec.Provider -> spec.model
         is SpeechEngineSpec.Vendor -> spec.model
+        is SpeechEngineSpec.OnDevice -> tr(R.string.voice_engine_on_device)
         is SpeechEngineSpec.Unavailable -> ""
     }
 
@@ -239,8 +241,12 @@ internal object VoiceCopy {
         SpeechFailure.Busy -> tr(R.string.voice_busy)
         SpeechFailure.Network -> tr(R.string.voice_network)
         SpeechFailure.MicUnavailable, SpeechFailure.AudioError -> tr(R.string.voice_mic_unavailable)
-        // 服务商的错沿用模型出错时的说法(额度、Key、找不到模型……)
-        is SpeechFailure.Provider -> tr(R.string.voice_provider_failed, why.error.message.orEmpty())
+        is SpeechFailure.Provider -> when (why.error) {
+            // 本机语音包没装:和开不了会话时同一句「需要下载」
+            is VoiceModelError.PackMissing -> unavailable(SpeechEngineSpec.Why.VoicePackMissing)
+            // 服务商的错沿用模型出错时的说法(额度、Key、找不到模型……)
+            else -> tr(R.string.voice_provider_failed, why.error.message.orEmpty())
+        }
         SpeechFailure.NoPermission -> tr(R.string.voice_permission_title)
         is SpeechFailure.ServiceNoPermission -> tr(R.string.voice_service_permission_title)
         is SpeechFailure.Unavailable -> tr(R.string.voice_unavailable_title)
@@ -257,6 +263,8 @@ internal object VoiceCopy {
         SpeechEngineSpec.Why.SystemFailed -> tr(R.string.voice_unavailable_system_failed)
         SpeechEngineSpec.Why.ProviderGone -> tr(R.string.voice_unavailable_provider_gone)
         SpeechEngineSpec.Why.Off -> tr(R.string.voice_unavailable_off)
+        SpeechEngineSpec.Why.VoicePackMissing -> tr(R.string.voice_unavailable_pack_missing)
+        SpeechEngineSpec.Why.OnDeviceUnsupported -> tr(R.string.voice_unavailable_on_device_unsupported)
     }
 
     /** 最后十秒的倒数;还早时为 null。 */

@@ -11,6 +11,7 @@ import com.wangzan101.mika.settings.Provider
 import com.wangzan101.mika.settings.ProviderStore
 import com.wangzan101.mika.settings.clientHeaders
 import com.wangzan101.mika.settings.providerKey
+import com.wangzan101.mika.voice.model.SttProtocol
 import com.wangzan101.mika.voice.model.SttSelection
 import com.wangzan101.mika.voice.model.SttSelectionController
 import com.wangzan101.mika.voice.model.VoiceModelEnvironment
@@ -46,9 +47,20 @@ class VoiceInput(
         if (!voiceModels.stt.migrated) return legacySpec()
         return try {
             migratedSpec()
-        } catch (_: VoiceModelError) {
-            SpeechEngineSpec.Unavailable(SpeechEngineSpec.Why.ProviderGone)
+        } catch (error: VoiceModelError) {
+            SpeechEngineSpec.Unavailable(onDeviceWhy(error) ?: SpeechEngineSpec.Why.ProviderGone)
         }
+    }
+
+    /**
+     * 本机语音包用不了时界面该说的原因:没装是「需要下载」(下好后不用重新选),设备跑不了照实说;
+     * 别的错误返回 null,照原来的处理。
+     */
+    private fun onDeviceWhy(error: Throwable): SpeechEngineSpec.Why? = when {
+        error is VoiceModelError.PackMissing -> SpeechEngineSpec.Why.VoicePackMissing
+        error is VoiceModelError.Unsupported && error.protocol == SttProtocol.OnDevice.name ->
+            SpeechEngineSpec.Why.OnDeviceUnsupported
+        else -> null
     }
 
     private fun legacySpec(): SpeechEngineSpec =
@@ -82,6 +94,7 @@ class VoiceInput(
         } catch (error: CancellationException) {
             throw error
         } catch (error: Exception) {
+            onDeviceWhy(error)?.let { return FailedSession(SpeechFailure.Unavailable(it)) }
             return FailedSession(SpeechFailure.Provider(VoiceModelError.from(error)))
         }
         if (spec is SpeechEngineSpec.Unavailable) return FailedSession(SpeechFailure.Unavailable(spec.why))
@@ -156,8 +169,9 @@ class VoiceInput(
                 })
             }
             is SpeechEngineSpec.Unavailable -> FailedSession(SpeechFailure.Unavailable(spec.why))
-            // Vendor recognition exists only in the catalog path; the legacy path never resolves to it.
-            is SpeechEngineSpec.Vendor -> FailedSession(SpeechFailure.Unavailable(SpeechEngineSpec.Why.SystemGone))
+            // Vendor and on-device recognition exist only in the catalog path; the legacy path never resolves to them.
+            is SpeechEngineSpec.Vendor, is SpeechEngineSpec.OnDevice ->
+                FailedSession(SpeechFailure.Unavailable(SpeechEngineSpec.Why.SystemGone))
         }
     }
 }
