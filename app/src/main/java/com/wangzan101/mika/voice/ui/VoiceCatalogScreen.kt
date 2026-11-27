@@ -516,7 +516,8 @@ private fun VoiceCatalogSheet(
             if (form.sttOn) {
                 ProtocolBlock(
                     stringResource(R.string.voice_catalog_stt_protocol),
-                    SttProtocol.entries.map { it to sttProtocolLabel(it) },
+                    // 本机离线识别只由「离线语音包」页登记,不能手填成自建服务的协议
+                    SttProtocol.entries.filter { it != SttProtocol.OnDevice }.map { it to sttProtocolLabel(it) },
                     form.sttProtocol.name,
                     { name -> form.sttProtocol = SttProtocol.valueOf(name) },
                     "voice-catalog-stt-protocol",
