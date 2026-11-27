@@ -5,9 +5,6 @@ import com.wangzan101.mika.core.tool.PluginToolSpec
 import com.wangzan101.mika.core.learn.skills.PluginSkills
 import com.wangzan101.mika.core.tool.Risk
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -112,8 +109,6 @@ class PluginRegistry(
         _plugins.value = next
         if (next != stored) writeRegistry(next)
     }
-
-    fun reloadAsync(): Job = scope.launch(Dispatchers.IO) { reload() }
 
     /** 安装器成功把目录换入后登记;同 id 升级保留原来的启用状态和安装时间。 */
     fun install(record: PluginRecord) = synchronized(lock) {
