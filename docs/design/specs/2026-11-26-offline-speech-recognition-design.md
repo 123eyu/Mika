@@ -69,14 +69,14 @@
 
 ### 5.1 语音包与清单
 
-**语音包**是一个模型的一组文件。第一版准备四个：
+**语音包**是一个模型的一组文件。第一版准备四个，其中 `whisper-small-int8` 是可选包：
 
 | 包 id | 模型 | 文件（只要 int8） | 大小（含许可文件） | 推荐给哪些界面语言 | 许可 |
 |---|---|---|---|---|---|
 | `sensevoice-small-int8` | SenseVoice Small（FunAudioLLM / 阿里） | `model.int8.onnx`、`tokens.txt` | 240 MB | zh-Hans、zh-Hant、en、ja、ko（也能识别粤语） | FunASR Model License 1.1：可使用、复制、修改、分享，须注明出处和作者、保留模型名 |
-| `dolphin-base-ctc-int8` | Dolphin base CTC（DataoceanAI） | `model.int8.onnx`、`tokens.txt` | 104 MB | fa（未实测，效果有限） | Apache-2.0 |
-| `whisper-base-int8` | Whisper base（OpenAI） | `base-encoder.int8.onnx`、`base-decoder.int8.onnx`、`base-tokens.txt` | 161 MB | id；tr、ar（效果有限）；以及所有语言的兜底 | MIT（OpenAI whisper） |
-| `whisper-small-int8` | Whisper small（OpenAI） | `small-encoder.int8.onnx`、`small-decoder.int8.onnx`、`small-tokens.txt` | 375 MB | es、pt、ru、vi（真机实测后改推它，见 §8.1；更准，但更慢、占内存更多） | MIT（OpenAI whisper） |
+| `dolphin-base-ctc-int8` | Dolphin base CTC（DataoceanAI） | `model.int8.onnx`、`tokens.txt` | 104 MB | vi（效果有限）、fa（未实测，效果有限） | Apache-2.0 |
+| `whisper-base-int8` | Whisper base（OpenAI） | `base-encoder.int8.onnx`、`base-decoder.int8.onnx`、`base-tokens.txt` | 161 MB | id；es、pt、ru、tr、ar（效果有限）；以及所有语言的兜底 | MIT（OpenAI whisper） |
+| `whisper-small-int8` | Whisper small（OpenAI） | `small-encoder.int8.onnx`、`small-decoder.int8.onnx`、`small-tokens.txt` | 375 MB | 暂无。可选包：更准，但更慢、占内存更多（见 §8.1） | MIT（OpenAI whisper） |
 
 上表已按 §8 的实测改过（2026-11-26）。「效果有限」指实测没达到 §7 的准确率要求，但前三个包里它最好。确切的仓库、提交、文件大小和哈希见 §8。
 
@@ -360,7 +360,7 @@ data class InstalledVoicePack(val entry: VoicePackEntry, val dir: File) {
 - Dolphin 实际不支持 en、es、pt、tr。识别这几种语言时输出是乱的，不能当它们的兜底。
 - Whisper base 的错误多是听错近音词，不是截断。
 - 另测了 Whisper small（int8，375 MB，作为可选包 `whisper-small-int8` 放进第一版）：es 0.10 / 8、pt 0.06 / 9、ru 0.09 / 9、vi 0.11 / 7，都达标；tr 0.29 / 5、ar 0.55 / 0 仍不达标。它在 Mac 上比 base 慢约 2.7 倍，手机上 5 秒语音估计要 10 秒左右。它先不推荐给任何语言；es、pt、ru、vi 要不要改推它，由实现时的真机测速定。
-- 实现时的真机实测（arm64 旗舰级处理器，4 线程）：5 秒语音 Whisper small 用 2.0–2.9 秒（es 2.7、pt 2.0、ru 2.9、vi 2.7），没超过 4 秒；同一批句子 es 0.04 / 9、pt 0.09 / 8、ru 0.09 / 9、vi 0.09 / 8，明显好于 Whisper base（es 0.33、pt 0.26、ru 0.21）和 Dolphin（vi 0.21）。所以 es、pt、ru、vi 改推 `whisper-small-int8`。代价是识别时进程内存多约 0.85 GB（Whisper base 约 0.42 GB），中端机上会更慢。
+- 实现时的真机实测（arm64 旗舰级处理器，4 线程）：5 秒语音 Whisper small 用 2.0–2.9 秒（es 2.7、pt 2.0、ru 2.9、vi 2.7）；同一批句子 es 0.04 / 9、pt 0.09 / 8、ru 0.09 / 9、vi 0.09 / 8，明显好于 Whisper base（es 0.33、pt 0.26、ru 0.21）和 Dolphin（vi 0.21）。但识别时进程内存多约 0.85 GB（预算 400 MB；Whisper base 约 0.42 GB，也略超），中端机上的速度没有测过。**决定**：默认推荐不变，es、pt、ru 仍推 Whisper base，vi 仍推 Dolphin；Whisper small 留作可选包，不推荐给任何语言。以后要不要改推它由维护者决定，可以考虑按内存大小做能力检测（内存够的手机才推荐）。
 
 **2. 仓库和文件**（全部是 sherpa-onnx 作者 csukuangfj 在 HuggingFace 上的导出，固定到下面的提交）
 
@@ -369,7 +369,7 @@ data class InstalledVoicePack(val entry: VoicePackEntry, val dir: File) {
 | `sensevoice-small-int8` | `csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17` | `2365baeacb507f821a0c8120fcee3d484dba7a07` | `model.int8.onnx` 239,233,841；`tokens.txt` 315,894 |
 | `dolphin-base-ctc-int8` | `csukuangfj/sherpa-onnx-dolphin-base-ctc-multi-lang-int8-2025-04-02` | `1f3a53d0ecf658f8b0974e2cfde368eee40732fa` | `model.int8.onnx` 103,729,802；`tokens.txt` 504,662 |
 | `whisper-base-int8` | `csukuangfj/sherpa-onnx-whisper-base` | `bb53ee204431c90d314c1cc08d28d23e5b7927cc` | `base-encoder.int8.onnx` 29,120,534；`base-decoder.int8.onnx` 130,672,026；`base-tokens.txt` 816,730 |
-| `whisper-small-int8`（更准更慢，推荐给 es、pt、ru、vi） | `csukuangfj/sherpa-onnx-whisper-small` | `8f3c18b358db4d1f2fc1eae49d75cd20989e4309` | `small-encoder.int8.onnx` 112,442,483；`small-decoder.int8.onnx` 262,226,114；`small-tokens.txt` 816,730 |
+| `whisper-small-int8`（可选，更准，但更慢、占内存更多，不推荐给任何语言） | `csukuangfj/sherpa-onnx-whisper-small` | `8f3c18b358db4d1f2fc1eae49d75cd20989e4309` | `small-encoder.int8.onnx` 112,442,483；`small-decoder.int8.onnx` 262,226,114；`small-tokens.txt` 816,730 |
 
 - 下载后逐个核对过：大模型文件和 HuggingFace 给的 LFS SHA-256 一致，小文件和 git blob 哈希一致。每个文件的 SHA-256 由发布脚本写进清单。
 - SenseVoice 还有一个 `…-int8-2025-09-09` 仓库。它是 ASLP-lab 用粤语数据微调过的版本（WSYue-ASR），不是官方通用版，不用。

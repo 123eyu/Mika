@@ -219,11 +219,11 @@ class CommittedCatalogTest(unittest.TestCase):
         tags = [tag for pack in self.catalog["packs"] for tag in pack["recommendedFor"]]
         self.assertEqual(len(tags), len(set(tags)))
 
-    def test_four_packs_with_whisper_small_for_es_pt_ru_vi(self):
+    def test_four_packs_with_optional_whisper_small(self):
         ids = [pack["id"] for pack in self.catalog["packs"]]
         self.assertEqual(ids, ["sensevoice-small-int8", "dolphin-base-ctc-int8", "whisper-base-int8", "whisper-small-int8"])
         small = self.catalog["packs"][3]
-        self.assertEqual(small["recommendedFor"], ["es", "pt", "ru", "vi"])
+        self.assertEqual(small["recommendedFor"], [])
 
     def test_asset_names_are_unique(self):
         names = [publish.asset_name(p["id"], f["name"]) for p in self.catalog["packs"] for f in p["files"]]
