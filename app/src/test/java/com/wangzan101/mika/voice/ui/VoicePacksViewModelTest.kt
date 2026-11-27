@@ -129,6 +129,26 @@ class VoicePacksViewModelTest {
         assertTrue(vm.cards.value.isEmpty())
     }
 
+    /**
+     * 装好的包内容坏了(大小对,状态还是 Installed):「重新下载」走同一条下载路,同一版本覆盖装好的那份;
+     * 不经过删除(删除会把选择改回「自动」、从备援链里去掉),下好后不用重新选。
+     */
+    @Test fun redownloadOnInstalledPackDownloadsWithoutDeleting() = runTest(UnconfinedTestDispatcher()) {
+        val pack = entry("sense")
+        val ops = FakeOps(listOf(pack)).apply { statuses["sense"] = VoicePackStatus.Installed }
+        val vm = vm(ops)
+        assertEquals(VoicePackStatus.Installed, vm.cards.value.single().status)
+        vm.download(pack)
+        assertEquals(listOf("sense"), ops.started)
+        assertTrue(ops.deleted.isEmpty())
+        assertEquals(DownloadPhase.Downloading, vm.cards.value.single().progress?.phase)
+        // 下完:还是装好的,一直没删过
+        ops.flow("sense").value = DownloadProgress(DownloadPhase.Ready, 100, 100)
+        assertEquals(VoicePackStatus.Installed, vm.cards.value.single().status)
+        assertNull(vm.cards.value.single().progress)
+        assertTrue(ops.deleted.isEmpty())
+    }
+
     @Test fun downloadFinishingRefreshesStatus() = runTest(UnconfinedTestDispatcher()) {
         val pack = entry("sense")
         val ops = FakeOps(listOf(pack))

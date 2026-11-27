@@ -86,6 +86,7 @@ class VoicePacksScreenTest {
         val statuses = mutableMapOf<String, VoicePackStatus>()
         val flow = MutableStateFlow(DownloadProgress(DownloadPhase.Idle, 0, -1))
         val started = mutableListOf<String>()
+        val deleted = mutableListOf<String>()
         override fun runnable(entry: VoicePackEntry) = true
         override fun status(entry: VoicePackEntry) = statuses[entry.id] ?: VoicePackStatus.NotInstalled
         override fun preflight(entry: VoicePackEntry) = preflightResult
@@ -99,6 +100,7 @@ class VoicePacksScreenTest {
             flow.value = DownloadProgress(DownloadPhase.Idle, 0, -1)
         }
         override suspend fun delete(entry: VoicePackEntry) {
+            deleted += entry.id
             statuses[entry.id] = VoicePackStatus.NotInstalled
         }
         override suspend fun import(entry: VoicePackEntry, inputs: List<VoicePackInstaller.ImportInput>) =
@@ -141,6 +143,24 @@ class VoicePacksScreenTest {
         waitTag("voice-pack-delete-test-pack")
         compose.onNodeWithTag("voice-pack-progress-test-pack").assertDoesNotExist()
         compose.onNodeWithText("已安装", substring = true).assertExists()
+    }
+
+    /** 装好的包(内容坏了也还是「已安装」):除了删除还能「重新下载」,点了开始下载、不删,选择照留。 */
+    @Test fun installedCardOffersDownloadAgainWithoutDeleting() {
+        val ops = FakeOps(listOf(pack)).apply { statuses["test-pack"] = VoicePackStatus.Installed }
+        showSection(ops)
+        compose.onNodeWithTag("voice-pack-delete-test-pack").assertExists()
+        compose.onNodeWithTag("voice-pack-redownload-test-pack").assertTextEquals("重新下载")
+        compose.onNodeWithTag("voice-pack-redownload-test-pack").performClick()
+        assertEquals(listOf("test-pack"), ops.started)
+        assertEquals(emptyList<String>(), ops.deleted)
+        waitTag("voice-pack-cancel-test-pack")
+        // 下载中不再给删除、重新下载;下完回到已安装
+        compose.onNodeWithTag("voice-pack-redownload-test-pack").assertDoesNotExist()
+        ops.flow.value = DownloadProgress(DownloadPhase.Ready, 100, 100)
+        waitTag("voice-pack-redownload-test-pack")
+        compose.onNodeWithText("已安装", substring = true).assertExists()
+        assertEquals(emptyList<String>(), ops.deleted)
     }
 
     @Test fun meteredNetworkAsksBeforeDownloading() {

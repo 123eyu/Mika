@@ -214,7 +214,12 @@ private fun VoicePackCardView(
                 when {
                     downloading -> PackButton(R.string.voice_pack_cancel, "voice-pack-cancel-$id", onCancel, ButtonKind.Tonal)
                     card.importing -> Unit
-                    card.status == VoicePackStatus.Installed -> PackButton(R.string.voice_pack_delete, "voice-pack-delete-$id", onDelete, ButtonKind.Tonal)
+                    card.status == VoicePackStatus.Installed -> {
+                        PackButton(R.string.voice_pack_delete, "voice-pack-delete-$id", onDelete, ButtonKind.Tonal)
+                        // 大小对、内容坏了(用的时候报「语音包已损坏」)也还是「已安装」:同一版本重新下载覆盖,
+                        // 不经过删除,选择和备援链照留(删除会把选择改回「自动」)
+                        PackButton(R.string.voice_pack_redownload, "voice-pack-redownload-$id", onDownload, ButtonKind.Text)
+                    }
                     card.status == VoicePackStatus.UpdateAvailable -> {
                         PackButton(R.string.voice_pack_update, "voice-pack-download-$id", onDownload)
                         PackButton(R.string.voice_pack_delete, "voice-pack-delete-$id", onDelete, ButtonKind.Tonal)

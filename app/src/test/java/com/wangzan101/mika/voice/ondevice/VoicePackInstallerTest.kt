@@ -546,6 +546,41 @@ class VoicePackInstallerTest {
         }
     }
 
+    /**
+     * 装好的包大小对、内容坏了(加载报「语音包已损坏」),卡片上点「重新下载」:同一版本重新下载、提交,
+     * 选择和语音目录里的模型照留(不经过删除),已加载的那份模型释放,下次用到加载新文件。
+     */
+    @Test fun sameVersionRedownloadKeepsSelectionAndReleasesTheEngine() {
+        val engineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        try {
+            val e = entry(2)
+            installManually(2)
+            voiceCatalog.installVoicePack(e)
+            voiceCatalog.setSttSelection(com.wangzan101.mika.voice.model.SttSelection.Model(OnDeviceCatalog.ref("pk")))
+            val before = voiceCatalog.state.value.selections
+            // 大小一样、内容不对:store.status 只看大小,还是 Installed
+            File(versionDir(2), "model.onnx").writeBytes("XXXXXXXXXX".toByteArray())
+            assertEquals(VoicePackStatus.Installed, store.status(e))
+            serveRelease(e)
+            val engines = OnDeviceEngines(backends(), engineScope, idleMs = 3_600_000)
+            runBlocking { engines.engine(InstalledVoicePack(e, versionDir(2))) }
+            assertFalse(loaded.single().closed)
+            runTest {
+                val i = installer(this, e, engines)
+                assertTrue(i.download(e))
+                advanceUntilIdle()
+                assertEquals(DownloadPhase.Ready, i.progress(e).value.phase)
+            }
+            assertTrue(modelData.contentEquals(File(versionDir(2), "model.onnx").readBytes()))
+            assertFalse(File(root, "pk/2.previous").exists())
+            assertTrue(hasModel())
+            assertEquals(before, voiceCatalog.state.value.selections)
+            waitFor { loaded.single().closed }
+        } finally {
+            engineScope.cancel()
+        }
+    }
+
     /** 同一版本重新下载、改名失败:旧的那份挪回原处照用,但这是失败,不能当成装好了。 */
     @Test fun sameVersionRedownloadRenameFailureIsFailure() = runTest {
         installManually(2)
