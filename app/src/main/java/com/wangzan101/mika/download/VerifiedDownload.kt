@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -42,9 +43,11 @@ data class DownloadProgress(
  * 通用的带校验下载器,App 更新(`about/`)和离线语音包(`voice/`)共用,所以单独成一个顶层包。
  *
  * - 一个任务按顺序下一组文件;每个文件各自按来源顺序尝试,不要求整组从同一个来源下完。
- * - 每个文件先写到 `<目标>.part`,下完整才改名成目标,再过校验;所以「目标文件在且校验通过」就是下好了,
- *   开始时已经这样的文件直接跳过。
- * - 某个文件所有来源都失败,整个任务失败,这个任务的目标文件一个都不留。取消只清掉正在下的那个文件。
+ * - 每个文件先写到 `<目标>.part`,下完整才改名成目标,**然后**才过校验;开始时目标已在且校验通过的文件直接跳过。
+ * - 目标文件以最终名字存在**不等于**校验过:校验进行中、校验没过还没来得及删、上次被打断时都可能是这样。
+ *   调用方(比如语音包安装)只能在 [start] 的 `onComplete` 里、或自己重新校验之后使用这些文件。
+ * - 某个文件所有来源都失败(或 `onComplete` 失败),整个任务失败,这个任务的目标文件一个都不留,
+ *   包括开始时因为已经校验通过而跳过的那些。取消只清掉正在下的那个文件,已校验的留着,重试时跳过。
  * - 任务按 key 区分:同一个 key 同时只有一个任务,不同 key 互不取消。
  * - 进程被杀后没下完的算失败,用户重试即可。下载只在调用方(用户点按)要求时开始。
  */
@@ -56,6 +59,8 @@ class VerifiedDownload(
         lateinit var job: Job
         @Volatile var call: Call? = null
         @Volatile var current: File? = null
+        /** 任务失败的原因;为空且任务没正常结束就是被取消。 */
+        @Volatile var failure: Throwable? = null
         /** 每个文件的已下字节和总字节;总字节先取 [DownloadFile.size],下载中拿到响应长度、下完拿到实际长度时更新。 */
         val done = LongArray(files.size)
         val sizes = LongArray(files.size) { files[it].size }
@@ -86,34 +91,40 @@ class VerifiedDownload(
         runs[key] = run
         flow(key).value = progress(run, DownloadPhase.Downloading)
         val job = scope.launch(start = CoroutineStart.LAZY) {
-            var end = DownloadPhase.Idle
-            var failure: Throwable? = null
+            previous?.join()
             try {
-                previous?.join()
                 download(key, run, client ?: http)
                 onComplete()
-                end = DownloadPhase.Ready
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                end = DownloadPhase.Failed
-                failure = e
+            } catch (e: Throwable) {
+                // 真正的取消(任务本身已不在跑)按取消处理;别的一律算失败,包括 Error,
+                // 以及任务还在跑时 verify/onComplete 里冒出来的 CancellationException(比如超时)。
+                if (e is CancellationException && !isActive) throw e
+                run.failure = e
                 files.forEach { it.target.delete() }
-            } finally {
-                // 被 [cancel] 停掉时已经摘掉了;整个 scope 被取消时在这里摘,同一个 key 以后还能再开。
-                synchronized(this@VerifiedDownload) {
-                    if (runs[key] === run) {
-                        runs.remove(key)
-                        flow(key).value = if (end == DownloadPhase.Idle) DownloadProgress(DownloadPhase.Idle, 0, -1)
-                            else progress(run, end, failure)
-                    }
-                }
+                // 内存耗尽这类虚拟机错误清理后照样抛出,不当成普通失败吞掉;其余失败只记在进度里。
+                if (e is VirtualMachineError) throw e
             }
         }
         run.job = job
         last[key] = job
+        // 收尾放在完成回调里:scope 在任务开跑前就被取消时任务体一行都不会执行,也要把 key 放出来。
+        job.invokeOnCompletion { cause -> finish(key, run, cause) }
         job.start()
         return true
+    }
+
+    @Synchronized
+    private fun finish(key: String, run: Run, cause: Throwable?) {
+        if (last[key] === run.job) last.remove(key)
+        // 被 [cancel] 停掉时已经摘掉、发过 Idle 了。
+        if (runs[key] !== run) return
+        runs.remove(key)
+        val failure = run.failure
+        flow(key).value = when {
+            failure != null -> progress(run, DownloadPhase.Failed, failure)
+            cause == null -> progress(run, DownloadPhase.Ready)
+            else -> DownloadProgress(DownloadPhase.Idle, 0, -1)
+        }
     }
 
     @Synchronized

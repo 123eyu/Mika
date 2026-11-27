@@ -4,12 +4,18 @@ import com.wangzan101.mika.about.DownloadPhase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
+import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.RecordedRequest
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -90,25 +96,80 @@ class VerifiedDownloadTest {
         assertEquals(DownloadPhase.Failed, d.progress("pack").value.phase)
     }
 
-    @Test fun independentKeysDoNotCancel() = runTest {
-        server.enqueue(MockResponse().setBody("apk"))
-        server.enqueue(MockResponse().setBody("model"))
-        val d = VerifiedDownload(http, this)
-        assertTrue(d.start("app-update", listOf(file("u.apk", "apk", "/apk"))))
-        assertTrue(d.start("voice-pack:x", listOf(file("m", "model", "/m"))))
-        advanceUntilIdle()
-        assertEquals(DownloadPhase.Ready, d.progress("app-update").value.phase)
-        assertEquals(DownloadPhase.Ready, d.progress("voice-pack:x").value.phase)
+    /** 两个 key 真的同时在下:停掉一个,另一个照常下完并通过校验。 */
+    @Test fun independentKeysDoNotCancel() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        try {
+            val apk = ByteArray(1_000_000) { 1 }
+            val model = ByteArray(200_000) { (it % 251).toByte() }
+            server.dispatcher = object : Dispatcher() {
+                override fun dispatch(request: RecordedRequest): MockResponse {
+                    val body = if (request.path == "/apk") apk else model
+                    return MockResponse().setBody(okio.Buffer().write(body)).throttleBody(16 * 1024, 100, TimeUnit.MILLISECONDS)
+                }
+            }
+            val d = VerifiedDownload(http, scope)
+            val update = File(dir, "u.apk")
+            val pack = File(dir, "m")
+            assertTrue(d.start("app-update", listOf(DownloadFile(update, listOf(url("/apk")), {}))))
+            assertTrue(d.start("voice-pack:x", listOf(DownloadFile(pack, listOf(url("/m")), { f ->
+                if (!f.readBytes().contentEquals(model)) throw IOException("digest mismatch")
+            }))))
+            waitFor { d.progress("app-update").value.doneBytes > 0 && d.progress("voice-pack:x").value.doneBytes > 0 }
+            assertEquals(DownloadPhase.Downloading, d.progress("voice-pack:x").value.phase)
+            d.cancel("app-update")
+            assertEquals(DownloadPhase.Idle, d.progress("app-update").value.phase)
+            assertEquals(DownloadPhase.Downloading, d.progress("voice-pack:x").value.phase)
+            waitFor { d.progress("voice-pack:x").value.phase != DownloadPhase.Downloading }
+            assertEquals(DownloadPhase.Ready, d.progress("voice-pack:x").value.phase)
+            assertTrue(pack.readBytes().contentEquals(model))
+            waitFor { !File(dir, "u.apk.part").exists() }
+            assertFalse(update.exists())
+        } finally {
+            scope.cancel()
+        }
+    }
 
-        server.enqueue(MockResponse().setBody("apk2"))
-        assertTrue(d.start("app-update", listOf(file("u2.apk", "apk2", "/apk2"))))
-        assertTrue(d.start("voice-pack:y", listOf(file("n", "model", "/n"))))
-        d.cancel("voice-pack:y")
+    /** scope 在任务开跑前就被取消:任务体一行不跑,key 也得放出来,不能一直显示在下载、再也开不了。 */
+    @Test fun cancelledScopeDoesNotStickTheKey() {
+        val dead = CoroutineScope(Job().apply { cancel() })
+        val d = VerifiedDownload(http, dead)
+        assertTrue(d.start("pack", listOf(file("a", "one", "/a"))))
+        assertEquals(DownloadPhase.Idle, d.progress("pack").value.phase)
+        assertTrue(d.start("pack", listOf(file("a", "one", "/a"))))
+        assertEquals(DownloadPhase.Idle, d.progress("pack").value.phase)
+        assertEquals(0, server.requestCount)
+    }
+
+    /** verify 抛出 Error:算失败,目标文件全清掉,不当成取消。 */
+    @Test fun errorFromVerifyFailsTheJobAndDeletesTargets() = runTest {
+        server.enqueue(MockResponse().setBody("one"))
+        server.enqueue(MockResponse().setBody("two"))
+        val d = VerifiedDownload(http, this)
+        val broken = DownloadFile(File(dir, "b"), listOf(url("/b")), { throw AssertionError("verifier bug") })
+        d.start("pack", listOf(file("a", "one", "/a"), broken))
         advanceUntilIdle()
-        assertEquals(DownloadPhase.Ready, d.progress("app-update").value.phase)
-        assertEquals("apk2", File(dir, "u2.apk").readText())
-        assertEquals(DownloadPhase.Idle, d.progress("voice-pack:y").value.phase)
-        assertFalse(File(dir, "n").exists())
+        val p = d.progress("pack").value
+        assertEquals(DownloadPhase.Failed, p.phase)
+        assertTrue(p.error is AssertionError)
+        assertEquals(0, dir.listFiles()!!.size)
+    }
+
+    /** 任务还在跑时冒出来的 CancellationException(比如 onComplete 里超时)是失败,不是用户取消。 */
+    @Test fun strayCancellationWhileActiveFailsTheJob() = runTest {
+        server.enqueue(MockResponse().setBody("one"))
+        val d = VerifiedDownload(http, this)
+        d.start("pack", listOf(file("a", "one", "/a"))) { withTimeout(1) { delay(1_000) } }
+        advanceUntilIdle()
+        val p = d.progress("pack").value
+        assertEquals(DownloadPhase.Failed, p.phase)
+        assertTrue(p.error is CancellationException)
+        assertFalse(File(dir, "a").exists())
+        // 失败后同一个 key 能再开。
+        server.enqueue(MockResponse().setBody("one"))
+        assertTrue(d.start("pack", listOf(file("a", "one", "/a"))))
+        advanceUntilIdle()
+        assertEquals(DownloadPhase.Ready, d.progress("pack").value.phase)
     }
 
     @Test fun sameKeyStartReturnsFalse() = runTest {
