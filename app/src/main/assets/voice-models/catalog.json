@@ -45,7 +45,7 @@
       "family": "dolphin",
       "displayName": "Dolphin Base",
       "languages": ["zh", "ja", "th", "ru", "ko", "id", "vi", "yue", "hi", "ur", "ms", "uz", "ar", "fa", "bn", "ta", "te", "ug", "gu", "my", "tl", "kk", "or", "ne", "mn", "km", "jv", "lo", "si", "fil", "ps", "pa", "kab", "ba", "ks", "tg", "su", "mr", "ky", "az"],
-      "recommendedFor": ["vi", "fa"],
+      "recommendedFor": ["fa"],
       "files": [
         {
           "name": "model.int8.onnx",
@@ -81,7 +81,7 @@
       "family": "whisper",
       "displayName": "Whisper Base",
       "languages": ["en", "zh", "de", "es", "ru", "ko", "fr", "ja", "pt", "tr", "pl", "ca", "nl", "ar", "sv", "it", "id", "hi", "fi", "vi", "iw", "uk", "el", "ms", "cs", "ro", "da", "hu", "ta", "no", "th", "ur", "hr", "bg", "lt", "la", "mi", "ml", "cy", "sk", "te", "fa", "lv", "bn", "sr", "az", "sl", "kn", "et", "mk", "br", "eu", "is", "hy", "ne", "mn", "bs", "kk", "sq", "sw", "gl", "mr", "pa", "si", "km", "sn", "yo", "so", "af", "oc", "ka", "be", "tg", "sd", "gu", "am", "yi", "lo", "uz", "fo", "ht", "ps", "tk", "nn", "mt", "sa", "lb", "my", "bo", "tl", "mg", "as", "tt", "haw", "ln", "ha", "ba", "jw", "su"],
-      "recommendedFor": ["es", "pt", "ru", "id", "tr", "ar"],
+      "recommendedFor": ["id", "tr", "ar"],
       "files": [
         {
           "name": "base-encoder.int8.onnx",
@@ -123,7 +123,7 @@
       "family": "whisper",
       "displayName": "Whisper Small",
       "languages": ["en", "zh", "de", "es", "ru", "ko", "fr", "ja", "pt", "tr", "pl", "ca", "nl", "ar", "sv", "it", "id", "hi", "fi", "vi", "iw", "uk", "el", "ms", "cs", "ro", "da", "hu", "ta", "no", "th", "ur", "hr", "bg", "lt", "la", "mi", "ml", "cy", "sk", "te", "fa", "lv", "bn", "sr", "az", "sl", "kn", "et", "mk", "br", "eu", "is", "hy", "ne", "mn", "bs", "kk", "sq", "sw", "gl", "mr", "pa", "si", "km", "sn", "yo", "so", "af", "oc", "ka", "be", "tg", "sd", "gu", "am", "yi", "lo", "uz", "fo", "ht", "ps", "tk", "nn", "mt", "sa", "lb", "my", "bo", "tl", "mg", "as", "tt", "haw", "ln", "ha", "ba", "jw", "su"],
-      "recommendedFor": [],
+      "recommendedFor": ["es", "pt", "ru", "vi"],
       "files": [
         {
           "name": "small-encoder.int8.onnx",

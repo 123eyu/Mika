@@ -45,7 +45,7 @@
       "family": "dolphin",
       "displayName": "Dolphin Base",
       "languages": ["zh", "ja", "th", "ru", "ko", "id", "vi", "yue", "hi", "ur", "ms", "uz", "ar", "fa", "bn", "ta", "te", "ug", "gu", "my", "tl", "kk", "or", "ne", "mn", "km", "jv", "lo", "si", "fil", "ps", "pa", "kab", "ba", "ks", "tg", "su", "mr", "ky", "az"],
-      "recommendedFor": ["vi", "fa"],
+      "recommendedFor": ["fa"],
       "hfRepo": "csukuangfj/sherpa-onnx-dolphin-base-ctc-multi-lang-int8-2025-04-02",
       "commit": "1f3a53d0ecf658f8b0974e2cfde368eee40732fa",
       "files": [
@@ -83,7 +83,7 @@
       "family": "whisper",
       "displayName": "Whisper Base",
       "languages": ["en", "zh", "de", "es", "ru", "ko", "fr", "ja", "pt", "tr", "pl", "ca", "nl", "ar", "sv", "it", "id", "hi", "fi", "vi", "iw", "uk", "el", "ms", "cs", "ro", "da", "hu", "ta", "no", "th", "ur", "hr", "bg", "lt", "la", "mi", "ml", "cy", "sk", "te", "fa", "lv", "bn", "sr", "az", "sl", "kn", "et", "mk", "br", "eu", "is", "hy", "ne", "mn", "bs", "kk", "sq", "sw", "gl", "mr", "pa", "si", "km", "sn", "yo", "so", "af", "oc", "ka", "be", "tg", "sd", "gu", "am", "yi", "lo", "uz", "fo", "ht", "ps", "tk", "nn", "mt", "sa", "lb", "my", "bo", "tl", "mg", "as", "tt", "haw", "ln", "ha", "ba", "jw", "su"],
-      "recommendedFor": ["es", "pt", "ru", "id", "tr", "ar"],
+      "recommendedFor": ["id", "tr", "ar"],
       "hfRepo": "csukuangfj/sherpa-onnx-whisper-base",
       "commit": "bb53ee204431c90d314c1cc08d28d23e5b7927cc",
       "files": [
@@ -127,7 +127,7 @@
       "family": "whisper",
       "displayName": "Whisper Small",
       "languages": ["en", "zh", "de", "es", "ru", "ko", "fr", "ja", "pt", "tr", "pl", "ca", "nl", "ar", "sv", "it", "id", "hi", "fi", "vi", "iw", "uk", "el", "ms", "cs", "ro", "da", "hu", "ta", "no", "th", "ur", "hr", "bg", "lt", "la", "mi", "ml", "cy", "sk", "te", "fa", "lv", "bn", "sr", "az", "sl", "kn", "et", "mk", "br", "eu", "is", "hy", "ne", "mn", "bs", "kk", "sq", "sw", "gl", "mr", "pa", "si", "km", "sn", "yo", "so", "af", "oc", "ka", "be", "tg", "sd", "gu", "am", "yi", "lo", "uz", "fo", "ht", "ps", "tk", "nn", "mt", "sa", "lb", "my", "bo", "tl", "mg", "as", "tt", "haw", "ln", "ha", "ba", "jw", "su"],
-      "recommendedFor": [],
+      "recommendedFor": ["es", "pt", "ru", "vi"],
       "hfRepo": "csukuangfj/sherpa-onnx-whisper-small",
       "commit": "8f3c18b358db4d1f2fc1eae49d75cd20989e4309",
       "files": [
@@ -162,7 +162,7 @@
         "file": "LICENSE",
         "attribution": "Whisper by OpenAI, https://github.com/openai/whisper (Copyright (c) 2022 OpenAI); ONNX export by k2-fsa/sherpa-onnx"
       },
-      "note": "Optional pack: more accurate, slower; recommendedFor empty until Task 10 on-device latency decides es/pt/ru/vi. Same MIT LICENSE as whisper-base. Not under `upstream`. Whisper language codes: Hebrew=iw, Javanese=jw."
+      "note": "More accurate, slower and larger: recommended for es/pt/ru/vi after on-device measurement (5 s clip decoded in 2.0-2.9 s; WER es 0.04, pt 0.09, ru 0.09, vi 0.09 vs whisper-base 0.33/0.26/0.21 and Dolphin vi 0.21). Same MIT LICENSE as whisper-base. Not under `upstream`. Whisper language codes: Hebrew=iw, Javanese=jw."
     }
   ]
 }

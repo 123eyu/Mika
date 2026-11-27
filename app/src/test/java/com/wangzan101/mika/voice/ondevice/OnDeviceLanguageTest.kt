@@ -34,7 +34,7 @@ class OnDeviceLanguageTest {
 
     @Test
     fun systemLanguageResolvesRecommendation() {
-        assertEquals("dolphin-base-ctc-int8", OnDeviceLanguage.recommended(catalog, AppLanguage.System, Locale("vi", "VN"))?.id)
+        assertEquals("whisper-small-int8", OnDeviceLanguage.recommended(catalog, AppLanguage.System, Locale("vi", "VN"))?.id)
         assertEquals("sensevoice-small-int8", OnDeviceLanguage.recommended(catalog, AppLanguage.System, Locale("zh", "TW"))?.id)
         assertEquals("whisper-base-int8", OnDeviceLanguage.recommended(catalog, AppLanguage.System, Locale("in", "ID"))?.id)
         // 不支持的系统语言落英文。
