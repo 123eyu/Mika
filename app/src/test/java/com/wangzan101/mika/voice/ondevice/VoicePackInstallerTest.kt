@@ -25,6 +25,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeFalse
+import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -53,7 +54,8 @@ class VoicePackInstallerTest {
     private val root by lazy { File(tmp.root, "voice-models") }
     private var free = 10L * 1024 * 1024 * 1024
     private val store by lazy { VoicePackStore(root, freeSpace = { free }) }
-    private val voiceCatalog = VoiceCatalogStore(MemoryBackend())
+    private val catalogBackend = MemoryBackend()
+    private val voiceCatalog = VoiceCatalogStore(catalogBackend)
     private var metered = false
     private var mirrors = MirrorSettings.OFF
     private var abi = true
@@ -125,19 +127,31 @@ class VoicePackInstallerTest {
         override val id = "fake"
         override fun supports(family: String) = family == "f"
         override fun abiSupported() = abi
-        override fun load(pack: InstalledVoicePack, options: EngineOptions): OnDeviceSttEngine = error("not used")
+        override fun load(pack: InstalledVoicePack, options: EngineOptions): OnDeviceSttEngine =
+            FakeEngine(pack.entry.version).also { loaded += it }
     }))
 
-    private fun installer(scope: CoroutineScope, e: VoicePackEntry = entry()) = VoicePackInstaller(
+    private class FakeEngine(val version: Int) : OnDeviceSttEngine {
+        @Volatile var closed = false
+        override suspend fun transcribe(pcm: ShortArray, language: String?) = "hi"
+        override fun close() { closed = true }
+    }
+
+    private val loaded = Collections.synchronizedList(mutableListOf<FakeEngine>())
+
+    private fun installer(
+        scope: CoroutineScope,
+        e: VoicePackEntry = entry(),
+        engines: OnDeviceEngines = OnDeviceEngines(backends(), scope),
+    ) = VoicePackInstaller(
         catalog = catalog(e),
         store = store,
         download = VerifiedDownload(http, scope),
         mirrors = { mirrors },
         metered = { metered },
         voiceCatalog = voiceCatalog,
-        engines = OnDeviceEngines(backends(), scope),
+        engines = engines,
         backends = backends(),
-        scope = scope,
     )
 
     private fun hasModel() = voiceCatalog.state.value.models.any { it.serviceId == OnDeviceCatalog.SERVICE_ID && it.id == "pk" }
@@ -492,10 +506,105 @@ class VoicePackInstallerTest {
         assertFalse(i.busy(e))
     }
 
+    // ---- 复审修正 ----
+
+    /** 启动补登记:文件装着、目录里没有模型的包补上;选择不动;已登记、没装的都不写。 */
+    @Test fun startupRestoresInstalledPackMissingFromCatalog() {
+        installManually(1)
+        val e = entry(2)
+        val other = e.copy(id = "absent")
+        voiceCatalog.setSttSelection(com.wangzan101.mika.voice.model.SttSelection.Off)
+        val before = voiceCatalog.state.value.selections
+        VoicePackInstaller.restoreInstalled(VoicePackCatalog(release, listOf(e, other)), store, voiceCatalog)
+        assertTrue(hasModel())
+        assertFalse(voiceCatalog.state.value.models.any { it.id == "absent" })
+        assertEquals(before, voiceCatalog.state.value.selections)
+        val writes = catalogBackend.writes
+        VoicePackInstaller.restoreInstalled(VoicePackCatalog(release, listOf(e, other)), store, voiceCatalog)
+        assertEquals("nothing missing: no catalog write", writes, catalogBackend.writes)
+    }
+
+    /** 升级装好新版本后,已加载的旧版本模型立刻释放,不和新的同时占内存。 */
+    @Test fun upgradeReleasesTheLoadedOldEngine() {
+        val engineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        try {
+            installManually(1)
+            val e = entry(2)
+            serveRelease(e)
+            val engines = OnDeviceEngines(backends(), engineScope, idleMs = 3_600_000)
+            runBlocking { engines.engine(InstalledVoicePack(entry(1), versionDir(1))) }
+            assertFalse(loaded.single().closed)
+            runTest {
+                val i = installer(this, e, engines)
+                i.download(e)
+                advanceUntilIdle()
+                assertEquals(DownloadPhase.Ready, i.progress(e).value.phase)
+            }
+            waitFor { loaded.single().closed }
+        } finally {
+            engineScope.cancel()
+        }
+    }
+
+    /** 同一版本重新下载、改名失败:旧的那份挪回原处照用,但这是失败,不能当成装好了。 */
+    @Test fun sameVersionRedownloadRenameFailureIsFailure() = runTest {
+        installManually(2)
+        val e = entry(2)
+        serveRelease(e)
+        val stagingRoot = File(root, ".staging")
+        val last = "github.com/wangzan101/Mika/releases/download/voice-models-v1/pk--LICENSE"
+        // 最后一个文件开始下时把 .staging 设成只读:文件照样写进 staging 自己的目录,但 staging 改名不出去
+        routes[last] = {
+            stagingRoot.setWritable(false)
+            MockResponse().setBody(okio.Buffer().write(licenseData))
+        }
+        val i = installer(this, e)
+        assertTrue(i.download(e))
+        advanceUntilIdle()
+        val readOnly = !stagingRoot.canWrite()
+        stagingRoot.setWritable(true)
+        assumeTrue("needs a non-root user", readOnly)
+        assertEquals(DownloadPhase.Failed, i.progress(e).value.phase)
+        assertEquals(versionDir(2), store.installed(e)?.dir)
+        assertFalse(hasModel())
+        assertFalse(i.busy(e))
+    }
+
+    /** scope 在任务开跑前就被取消:锁照样放开,staging 不留,之后还能再下。 */
+    @Test fun cancelledScopeDoesNotLeakThePackLock() = runTest {
+        val e = entry()
+        serveRelease(e)
+        val dead = CoroutineScope(kotlinx.coroutines.Job().apply { cancel() })
+        val i = installer(dead, e, OnDeviceEngines(backends(), this))
+        assertTrue(i.download(e))
+        assertFalse(i.busy(e))
+        assertFalse(stagingOf(e).exists())
+        assertTrue(i.download(e))
+        assertFalse(i.busy(e))
+    }
+
+    /** staging 在下载任务里(后台)建,不在调用 download 的线程上:调用返回时还没建。 */
+    @Test fun stagingIsPreparedInsideTheJob() = runTest {
+        val e = entry()
+        serveRelease(e)
+        // 上次残留的文件:要被任务里的 stagingDir 清掉,而不是被当成已校验跳过
+        stagingOf(e).mkdirs()
+        File(stagingOf(e), "model.onnx").writeBytes(modelData)
+        val i = installer(this, e)
+        assertTrue(i.download(e))
+        assertTrue("stale staging untouched until the job runs", File(stagingOf(e), "model.onnx").exists())
+        advanceUntilIdle()
+        assertEquals(DownloadPhase.Ready, i.progress(e).value.phase)
+        assertEquals(3, requested.size)
+        assertNotNull(store.installed(e))
+    }
+
     private class MemoryBackend : VoiceCatalogBackend {
         private var value: String? = null
+        var writes = 0
         override fun read(): String? = value
         override fun write(value: String): Boolean {
+            writes++
             this.value = value
             return true
         }

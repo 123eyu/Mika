@@ -707,7 +707,13 @@ class MikaApp : Application(), WebOwner, SandboxOwner, TaskEnvironment.Owner, Ph
             runCatching {
                 // 和语音目录用同一份存放和清单(见 VoiceModelEnvironment)
                 val voice = com.wangzan101.mika.voice.model.VoiceModelEnvironment.get(this@MikaApp)
-                voice.voicePacks?.cleanup(voice.voicePackCatalog!!())
+                val packs = voice.voicePacks
+                if (packs != null) {
+                    val catalog = voice.voicePackCatalog!!()
+                    packs.cleanup(catalog)
+                    // 上次在提交和写进语音目录之间被杀:文件装着、目录里没有模型,补上
+                    com.wangzan101.mika.voice.ondevice.VoicePackInstaller.restoreInstalled(catalog, packs, voice.catalog)
+                }
             }.onFailure { Log.w("MikaVoice", "Could not clean voice packs", it) }
         }
         // 界面以外的文字(通知、服务、悬浮胶囊)按 App 语言取

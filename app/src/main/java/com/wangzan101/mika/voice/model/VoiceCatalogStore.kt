@@ -121,6 +121,23 @@ class VoiceCatalogStore(
     }
 
     /**
+     * 启动时补登记:文件装着、快照里却没有模型的语音包(上次进程在提交和登记之间被杀)。
+     * 只加缺的模型(第一次时连同本机服务),选择、备援链一概不动;什么都不缺,或快照读不出来时不写。
+     */
+    @Synchronized
+    fun restoreVoicePacks(entries: List<VoicePackEntry>) {
+        val current = mutable.value
+        if (current.error != null) return
+        val missing = entries.filter { e -> current.models.none { it.sameIdentity(OnDeviceCatalog.SERVICE_ID, e.id) } }
+        if (missing.isEmpty()) return
+        commit { snapshot ->
+            val services = if (snapshot.services.any { it.id == OnDeviceCatalog.SERVICE_ID }) snapshot.services
+            else snapshot.services + OnDeviceCatalog.SERVICE
+            snapshot.copy(services = services, models = snapshot.models + missing.map(OnDeviceCatalog::model))
+        }
+    }
+
+    /**
      * 用户删掉一个语音包:删它的模型,备援链里有它的照 [deleteModel] 去掉。
      * 和 [deleteModel] 有一处故意不同:语音输入选中的是它时回到「自动」,不是「关闭」。
      * 删模型设成关闭,是为了不悄悄换成要花钱的服务商;「自动」只用手机自带识别或别的本机语音包,不花钱、不出手机。

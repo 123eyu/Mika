@@ -73,6 +73,9 @@ class VoicePackStore(
         dir
     }
 
+    /** [stagingDir] 会给出的路径;只算路径,不建目录、不登记。下载要事先拼好每个文件的目标路径时用。 */
+    fun stagingPath(entry: VoicePackEntry): File = stagingFor(entry)
+
     /** 下载或导入失败、取消:删掉这个包这个版本的 staging,撤销正在用的登记。 */
     fun abandon(entry: VoicePackEntry) = synchronized(lock) {
         val dir = stagingFor(entry)

@@ -15,13 +15,9 @@ import com.wangzan101.mika.voice.model.VoiceCatalogStore
 import com.wangzan101.mika.voice.model.VoiceModelEnvironment
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -56,8 +52,6 @@ class VoicePackInstaller(
     private val voiceCatalog: VoiceCatalogStore,
     private val engines: OnDeviceEngines,
     private val backends: OnDeviceBackends = OnDeviceBackends(),
-    /** 下载结束后的收尾(放弃 staging、放开这个包)在这里跑。 */
-    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
     private val io: CoroutineDispatcher = Dispatchers.IO,
 ) {
     /** 下载前检查的结果;顺序是设备不支持 → 空间不够 → 按流量计费要确认。 */
@@ -125,8 +119,11 @@ class VoicePackInstaller(
 
     /**
      * 开始下载(用户点「下载」,[preflight] 之后)。这个包已经有下载或导入在进行时什么都不做,返回 false;
-     * staging 建不出来、或者一个可用的来源都没有时也返回 false。进度看 [progress]。
-     * 在调用线程上只建一个空的 staging 目录、读一次镜像设置,下载本身在后台。
+     * 一个可用的来源都没有时也返回 false。进度看 [progress]。
+     *
+     * 在调用线程上只拿这个包的锁、算地址(第一次会读镜像设置),不碰 staging:建 staging(会删上次的残留)在下载任务里、
+     * 后台线程上做。锁一直拿到任务彻底结束;放弃 staging、放开锁挂在任务自己的结束上([VerifiedDownload.start] 的 onEnd),
+     * 不靠另起的协程,所以 scope 被取消也不会漏掉。
      */
     fun download(entry: VoicePackEntry): Boolean {
         val lock = lock(entry)
@@ -135,28 +132,28 @@ class VoicePackInstaller(
         try {
             val sources = entry.files.map { sources(entry, it) }
             if (sources.any { it.isEmpty() }) return false
-            // staging 是空的新目录(上次的残留在 store 里清掉);只有锁住的这一个操作会碰它。
-            val staging = store.stagingDir(entry)
-            val placed = entry.files.mapIndexed { i, f ->
+            val staging = store.stagingPath(entry)
+            val files = entry.files.mapIndexed { i, f ->
                 DownloadFile(File(staging, f.name), sources[i], verify = { verify(it, f) }, size = f.size)
             }
-            started = download.start(key(entry), placed) { install(entry, staging) }
-            if (!started) store.abandon(entry)
-        } catch (e: IOException) {
-            runCatching { store.abandon(entry) }
-        } finally {
-            if (!started) lock.unlock()
-        }
-        if (started) {
-            scope.launch {
-                try {
-                    download.join(key(entry))
-                } finally {
+            started = download.start(
+                key(entry), files,
+                prepare = {
+                    // 空的新目录,登记为正在用;只有锁住的这一个操作会碰它
+                    check(store.stagingDir(entry) == staging) { "unexpected staging dir" }
+                },
+                onEnd = {
                     // 成功时 staging 已改名走,这一步什么都不做;失败、取消时清掉 staging、撤销登记。
-                    withContext(NonCancellable) { runCatching { store.abandon(entry) } }
-                    lock.unlock()
-                }
-            }
+                    try {
+                        store.abandon(entry)
+                    } finally {
+                        lock.unlock()
+                    }
+                },
+            ) { install(entry, staging) }
+        } finally {
+            // 没开始(没来源、key 被占、start 抛错):staging 还没建,只放开锁
+            if (!started) lock.unlock()
         }
         return started
     }
@@ -264,14 +261,20 @@ class VoicePackInstaller(
         return ImportResult.Installed
     }
 
-    /** 提交 staging 并写进语音目录。提交抛错但新版本已经装上(删旧版本出错)算成功;没装上就往外抛,旧版本和目录不动。 */
+    /**
+     * 提交 staging 并写进语音目录,再释放这个包已加载的模型(换了版本时旧模型不留在内存里,下次用到加载新的)。
+     * 提交抛错时,staging 已经不在(改名生效了)且新版本装全,说明是之后删旧版本出错,算成功;
+     * 否则往外抛,旧版本和目录不动。同一版本重新下载时改名失败,旧的那份会被挪回原处,`installed` 也不为空,
+     * 所以只看 `installed` 不够,要看 staging 还在不在。
+     */
     private fun install(entry: VoicePackEntry, staging: File) {
         try {
             store.commit(entry, staging)
         } catch (e: IOException) {
-            if (store.installed(entry) == null) throw e
+            if (staging.exists() || store.installed(entry) == null) throw e
         }
         voiceCatalog.installVoicePack(entry)
+        engines.release(entry.id)
     }
 
     /** 流的内容写进 [target],最多写清单大小加一个字节就停;大小和 SHA-256 都对上返回 true。 */
@@ -334,6 +337,14 @@ class VoicePackInstaller(
             }
             val plain = base.removePrefix("$id--")
             return plain.takeIf { VoicePackCatalog.isSafeName(it) }
+        }
+
+        /**
+         * App 启动时、[VoicePackStore.cleanup] 之后调(后台线程):文件装着(哪个版本都行)、语音目录里却没有模型的包补登记。
+         * 提交把新版本改名生效后、写进语音目录前进程被杀,就会是这样;不补的话包装着却选不了。已登记的不动、不写。
+         */
+        fun restoreInstalled(catalog: VoicePackCatalog, store: VoicePackStore, voiceCatalog: VoiceCatalogStore) {
+            voiceCatalog.restoreVoicePacks(catalog.packs.filter { store.installedAny(it) != null })
         }
 
         @Volatile

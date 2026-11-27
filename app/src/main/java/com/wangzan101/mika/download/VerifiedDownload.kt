@@ -75,12 +75,18 @@ class VerifiedDownload(
      * 开始下载 [files];[key] 已经有任务在跑时什么都不做,返回 false。
      * [client] 为空时用构造时给的 [http](走应用代理);全部通过后先跑 [onComplete](比如把文件挪到安装位置),
      * 它也成功才算 [DownloadPhase.Ready],它抛错算失败。
+     *
+     * [prepare] 在任务里、下第一个文件之前跑(比如在后台线程上建空的目标目录),抛错算失败。
+     * [onEnd] 在任务彻底结束后调一次,不论成功、失败、取消,也不论 scope 在任务开跑前就已取消;
+     * 它先于进度变成最终状态,调用方在里面清理自己的东西(放弃 staging、放开锁)。它不该抛错,抛了也只吞掉。
      */
     @Synchronized
     fun start(
         key: String,
         files: List<DownloadFile>,
         client: OkHttpClient? = null,
+        prepare: suspend () -> Unit = {},
+        onEnd: () -> Unit = {},
         onComplete: suspend () -> Unit = {},
     ): Boolean {
         require(files.isNotEmpty()) { "nothing to download" }
@@ -93,6 +99,7 @@ class VerifiedDownload(
         val job = scope.launch(start = CoroutineStart.LAZY) {
             previous?.join()
             try {
+                prepare()
                 download(key, run, client ?: http)
                 onComplete()
             } catch (e: Throwable) {
@@ -108,7 +115,13 @@ class VerifiedDownload(
         run.job = job
         last[key] = job
         // 收尾放在完成回调里:scope 在任务开跑前就被取消时任务体一行都不会执行,也要把 key 放出来。
-        job.invokeOnCompletion { cause -> finish(key, run, cause) }
+        job.invokeOnCompletion { cause ->
+            try {
+                runCatching(onEnd)
+            } finally {
+                finish(key, run, cause)
+            }
+        }
         job.start()
         return true
     }
