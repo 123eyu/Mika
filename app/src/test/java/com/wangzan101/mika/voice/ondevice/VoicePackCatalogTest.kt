@@ -2,6 +2,7 @@ package com.wangzan101.mika.voice.ondevice
 
 import com.wangzan101.mika.i18n.AppLanguage
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -72,6 +73,23 @@ class VoicePackCatalogTest {
             minimal(extraRoot = "\"generatedAt\": \"2026\",", extraPack = "\"minApp\": 3,", extraFile = ", \"mirror\": [\"x\"]"),
         ) { _, _ -> true }
         assertEquals(3, c.packs.size)
+    }
+
+    @Test
+    fun packWithUnsafeIdOrFileNameIsHidden() {
+        val bad = listOf("", ".", "..", "../x", "a/b", "a\\\\b")
+        bad.forEach { name ->
+            // 只改 a 的文件名(LICENSE 三个包都有,改 a 那条带的 url 来定位)
+            val json = minimal(extraFile = ", \"url\": \"https://example.com/a-model\"")
+                .replace("\"name\": \"m.onnx\", \"role\": \"model\", \"size\": 10, \"sha256\": \"${"0".repeat(64)}\" , \"url\": \"https://example.com/a-model\"",
+                    "\"name\": \"$name\", \"role\": \"model\", \"size\": 10, \"sha256\": \"${"0".repeat(64)}\"")
+            val byFile = VoicePackCatalog.parse(json) { _, _ -> true }
+            assertEquals("file name '$name'", listOf("b", "c"), byFile.packs.map { it.id })
+            val byId = VoicePackCatalog.parse(minimal().replace("\"id\": \"a\"", "\"id\": \"$name\"")) { _, _ -> true }
+            assertEquals("id '$name'", listOf("b", "c"), byId.packs.map { it.id })
+        }
+        assertTrue(VoicePackCatalog.isSafeName("model.int8.onnx"))
+        assertFalse(VoicePackCatalog.isSafeName(".."))
     }
 
     @Test(expected = IllegalStateException::class)

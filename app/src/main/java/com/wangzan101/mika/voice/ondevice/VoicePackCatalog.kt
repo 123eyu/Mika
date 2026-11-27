@@ -60,13 +60,21 @@ class VoicePackCatalog(val release: String, val packs: List<VoicePackEntry>) {
 
         /**
          * 解析清单;[supported] 判断某个引擎/模型族当前能不能跑,不能跑的包不列出来。
+         * 包 id 或某个文件名不是安全的单段名字([isSafeName])时,这个包也不列出来:id 和文件名会直接拼成
+         * 安装目录和下载、导入写入的路径;只藏这一个包,别的包照常能用。
          * 清单随 APK 一起发,结构版本对不上是打包出错,直接抛 [IllegalStateException]。
          */
         fun parse(json: String, supported: (backend: String, family: String) -> Boolean): VoicePackCatalog {
             val m = this.json.decodeFromString<Manifest>(json)
             check(m.schema == SCHEMA) { "voice-pack catalog schema ${m.schema}, expected $SCHEMA" }
-            return VoicePackCatalog(m.release, m.packs.filter { supported(it.backend, it.family) })
+            return VoicePackCatalog(m.release, m.packs.filter { p ->
+                supported(p.backend, p.family) && isSafeName(p.id) && p.files.all { isSafeName(it.name) }
+            })
         }
+
+        /** 能直接当一段路径用的名字:非空、不是 `.` 或 `..`、不含 `/` 和 `\`。 */
+        fun isSafeName(name: String): Boolean =
+            name.isNotEmpty() && name != "." && name != ".." && '/' !in name && '\\' !in name
 
         fun load(context: Context, supported: (backend: String, family: String) -> Boolean): VoicePackCatalog =
             parse(context.assets.open(ASSET).bufferedReader().use { it.readText() }, supported)

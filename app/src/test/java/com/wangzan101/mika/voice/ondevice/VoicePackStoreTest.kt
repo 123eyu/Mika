@@ -11,6 +11,8 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.LinkOption
 
 class VoicePackStoreTest {
     @get:Rule val tmp = TemporaryFolder()
@@ -134,7 +136,7 @@ class VoicePackStoreTest {
         fill(versionDir(e, 2), e)
         fill(versionDir(b, 1), b)   // b 只有旧版本:照常留着用
         fill(File(root, "gone/1"), entry("gone"))
-        fill(store.stagingDir(e), e)
+        fill(File(root, ".staging/a-3"), e)   // 上个进程没下完的残留(没登记为正在用)
         File(root, "a/junk").mkdirs()
 
         store.cleanup(catalog(e, b))
@@ -156,6 +158,82 @@ class VoicePackStoreTest {
 
         VoicePackStore(File(tmp.root, "never-created")).cleanup(catalog(e))
         assertFalse(File(tmp.root, "never-created").exists())
+    }
+
+    @Test
+    fun crashMidCommitOfSameVersionKeepsAUsablePack() {
+        val e = entry()
+        // commit 刚把装好的那份挪到一旁、新的还没改名进来时进程被杀
+        fill(File(root, "a/2.previous"), e)
+        fill(File(root, ".staging/a-2"), e)
+        VoicePackStore(root).cleanup(catalog(e))
+        assertEquals(VoicePackStatus.Installed, store.status(e))
+        assertEquals(listOf("2"), File(root, "a").list()!!.toList())
+        assertFalse(File(root, ".staging").exists())
+
+        // 新的已经改名进来、旁边那份还没删时被杀:留新的
+        fill(File(root, "a/2.previous"), e)
+        File(root, "a/2/tokens.txt").writeText("new!")
+        VoicePackStore(root).cleanup(catalog(e))
+        assertEquals(listOf("2"), File(root, "a").list()!!.toList())
+        assertEquals("new!", File(root, "a/2/tokens.txt").readText())
+    }
+
+    @Test
+    fun asideCopyIsNotAnOlderVersion() {
+        val e = entry()
+        fill(File(root, "a/2.previous"), e)
+        assertNull(store.installedAny(e))
+        assertEquals(VoicePackStatus.NotInstalled, store.status(e))
+    }
+
+    @Test
+    fun cleanupAndDeleteDoNotFollowSymlinks() {
+        val e = entry()
+        val outside = File(tmp.root, "outside").apply { mkdirs() }
+        val precious = File(outside, "precious.txt").apply { writeText("keep") }
+        root.mkdirs()
+        // 根下一个清单里没有的「包」其实是指到外面的链接;包里一个版本目录也是
+        Files.createSymbolicLink(File(root, "gone").toPath(), outside.toPath())
+        File(root, "a").mkdirs()
+        Files.createSymbolicLink(File(root, "a/1").toPath(), outside.toPath())
+        fill(versionDir(e), e)
+        Files.createSymbolicLink(File(versionDir(e), "extra").toPath(), outside.toPath())
+
+        store.cleanup(catalog(e))
+        assertTrue(precious.isFile)
+        assertFalse(Files.exists(File(root, "gone").toPath(), LinkOption.NOFOLLOW_LINKS))
+        assertFalse(Files.exists(File(root, "a/1").toPath(), LinkOption.NOFOLLOW_LINKS))
+
+        store.delete("a")
+        assertTrue(precious.isFile)
+        assertFalse(File(root, "a").exists())
+
+        // 包目录本身是链接:删链接,不删外面的东西
+        Files.createSymbolicLink(File(root, "a").toPath(), outside.toPath())
+        store.delete("a")
+        assertTrue(precious.isFile)
+        assertFalse(Files.exists(File(root, "a").toPath(), LinkOption.NOFOLLOW_LINKS))
+    }
+
+    @Test
+    fun cleanupLeavesActiveStagingAlone() {
+        val e = entry()
+        val other = entry("b")
+        val staging = store.stagingDir(e)
+        fill(staging, e, skip = setOf("LICENSE"))
+        // 另一个实例(App 启动时那个)清理时,正在下的 staging 不动
+        VoicePackStore(root).cleanup(catalog(e, other))
+        assertTrue(File(staging, "model.onnx").isFile)
+
+        store.abandon(e)
+        assertFalse(staging.exists())
+        fill(store.stagingDir(other), other)
+        store.commit(other, File(root, ".staging/b-2"))
+        File(root, ".staging/stray").mkdirs()
+        VoicePackStore(root).cleanup(catalog(e, other))
+        assertFalse(File(root, ".staging").exists())
+        assertEquals(VoicePackStatus.Installed, store.status(other))
     }
 
     @Test
