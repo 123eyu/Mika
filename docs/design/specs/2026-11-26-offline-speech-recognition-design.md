@@ -69,15 +69,16 @@
 
 ### 5.1 语音包与清单
 
-**语音包**是一个模型的一组文件。第一版准备三个：
+**语音包**是一个模型的一组文件。第一版准备四个，其中 `whisper-small-int8` 是可选包：
 
 | 包 id | 模型 | 文件（只要 int8） | 大小（含许可文件） | 推荐给哪些界面语言 | 许可 |
 |---|---|---|---|---|---|
 | `sensevoice-small-int8` | SenseVoice Small（FunAudioLLM / 阿里） | `model.int8.onnx`、`tokens.txt` | 240 MB | zh-Hans、zh-Hant、en、ja、ko（也能识别粤语） | FunASR Model License 1.1：可使用、复制、修改、分享，须注明出处和作者、保留模型名 |
 | `dolphin-base-ctc-int8` | Dolphin base CTC（DataoceanAI） | `model.int8.onnx`、`tokens.txt` | 104 MB | vi（效果有限）、fa（未实测，效果有限） | Apache-2.0 |
 | `whisper-base-int8` | Whisper base（OpenAI） | `base-encoder.int8.onnx`、`base-decoder.int8.onnx`、`base-tokens.txt` | 161 MB | id；es、pt、ru、tr、ar（效果有限）；以及所有语言的兜底 | MIT（OpenAI whisper） |
+| `whisper-small-int8` | Whisper small（OpenAI） | `small-encoder.int8.onnx`、`small-decoder.int8.onnx`、`small-tokens.txt` | 375 MB | 暂无。可选，更准更慢，推荐与否由真机实测定（es、pt、ru、vi 可能改推它） | MIT（OpenAI whisper） |
 
-上表已按 §8 的实测改过（2026-11-26）。「效果有限」指实测没达到 §7 的准确率要求，但三个包里它最好。确切的仓库、提交、文件大小和哈希见 §8。
+上表已按 §8 的实测改过（2026-11-26）。「效果有限」指实测没达到 §7 的准确率要求，但前三个包里它最好。确切的仓库、提交、文件大小和哈希见 §8。
 
 **清单**是 `app/src/main/assets/voice-models/catalog.json`，随 APK 发布，也就是信任锚。每个包包含：
 
@@ -351,7 +352,7 @@ data class InstalledVoicePack(val entry: VoicePackEntry, val dir: File) {
 - fa 推荐 Dolphin：Dolphin 官方语言表里有 fa，面向中东语言训练过。没实测，标「效果有限」。
 - Dolphin 实际不支持 en、es、pt、tr。识别这几种语言时输出是乱的，不能当它们的兜底。
 - Whisper base 的错误多是听错近音词，不是截断。
-- 作为参考，另测了 Whisper small（int8，375 MB，不在第一版里）：es 0.10 / 8、pt 0.06 / 9、ru 0.09 / 9、vi 0.11 / 7，都达标；tr 0.29 / 5、ar 0.55 / 0 仍不达标。它在 Mac 上比 base 慢约 2.7 倍，手机上 5 秒语音估计要 10 秒左右。要不要加这个包，由维护者定。
+- 另测了 Whisper small（int8，375 MB，作为可选包 `whisper-small-int8` 放进第一版）：es 0.10 / 8、pt 0.06 / 9、ru 0.09 / 9、vi 0.11 / 7，都达标；tr 0.29 / 5、ar 0.55 / 0 仍不达标。它在 Mac 上比 base 慢约 2.7 倍，手机上 5 秒语音估计要 10 秒左右。它先不推荐给任何语言；es、pt、ru、vi 要不要改推它，由实现时的真机测速定。
 
 **2. 仓库和文件**（全部是 sherpa-onnx 作者 csukuangfj 在 HuggingFace 上的导出，固定到下面的提交）
 
@@ -360,13 +361,14 @@ data class InstalledVoicePack(val entry: VoicePackEntry, val dir: File) {
 | `sensevoice-small-int8` | `csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17` | `2365baeacb507f821a0c8120fcee3d484dba7a07` | `model.int8.onnx` 239,233,841；`tokens.txt` 315,894 |
 | `dolphin-base-ctc-int8` | `csukuangfj/sherpa-onnx-dolphin-base-ctc-multi-lang-int8-2025-04-02` | `1f3a53d0ecf658f8b0974e2cfde368eee40732fa` | `model.int8.onnx` 103,729,802；`tokens.txt` 504,662 |
 | `whisper-base-int8` | `csukuangfj/sherpa-onnx-whisper-base` | `bb53ee204431c90d314c1cc08d28d23e5b7927cc` | `base-encoder.int8.onnx` 29,120,534；`base-decoder.int8.onnx` 130,672,026；`base-tokens.txt` 816,730 |
+| `whisper-small-int8`（可选，更准更慢，推荐与否由真机实测定） | `csukuangfj/sherpa-onnx-whisper-small` | `8f3c18b358db4d1f2fc1eae49d75cd20989e4309` | `small-encoder.int8.onnx` 112,442,483；`small-decoder.int8.onnx` 262,226,114；`small-tokens.txt` 816,730 |
 
 - 下载后逐个核对过：大模型文件和 HuggingFace 给的 LFS SHA-256 一致，小文件和 git blob 哈希一致。每个文件的 SHA-256 由发布脚本写进清单。
 - SenseVoice 还有一个 `…-int8-2025-09-09` 仓库。它是 ASLP-lab 用粤语数据微调过的版本（WSYue-ASR），不是官方通用版，不用。
 - **许可文件不在 HuggingFace 仓库里**，要从模型的原始仓库取，固定到提交：
   - SenseVoice：`modelscope/FunASR` 的 `MODEL_LICENSE`，提交 `58830eca4012644aac0c3218c3ccc7d98f003fda`。HuggingFace 仓库里的 `LICENSE` 只有一行链接，不能当许可文件。
   - Dolphin：`DataoceanAI/Dolphin` 的 `LICENSE`（Apache-2.0），提交 `bb70b9c0cab1235b8458141819c0ba92773d3b41`。
-  - Whisper：`openai/whisper` 的 `LICENSE`（MIT），提交 `6e3be77e1a105e59086e3e21ff5f609fd6fa89a5`。
+  - Whisper：`openai/whisper` 的 `LICENSE`（MIT），两个 Whisper 包共用，提交 `6e3be77e1a105e59086e3e21ff5f609fd6fa89a5`。
   - 所以许可文件在 HuggingFace 上没有备用来源。发布脚本要按文件单独记来源地址，不能都拼在 `upstream` 后面。
 
 **3. sherpa-onnx AAR**
