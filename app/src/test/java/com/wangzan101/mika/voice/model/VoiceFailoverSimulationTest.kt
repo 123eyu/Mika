@@ -319,6 +319,24 @@ class VoiceFailoverSimulationTest {
         assertTrue(trace.any { it.startsWith("/primary/") })
     }
 
+    @Test fun unreachableCloudHeadFailsOverToOnDeviceTail() = runBlocking {
+        val entry = testPackEntry("sense")
+        installTestPack(packs, entry)
+        // 连不上的地址(本机 9 号端口没人听),模拟没网时的云端链头
+        val p = store.connect("dead", ProviderConfig.Kind.OpenAiCompat, "http://127.0.0.1:9/v1", "k1", emptyList())
+        KeyPoolManager.shared.reset(p.id)
+        val service = VoiceService("provider:${p.id}", "dead", VoiceAccount.ExistingProvider(p.id))
+        catalog.upsertService(service)
+        catalog.upsertModel(VoiceModel(service.id, "whisper-1", "whisper-1", stt = SttBinding(SttProtocol.AudioTranscriptions)))
+        val primary = VoiceModelRef(service.id, "whisper-1", VoiceCapability.STT)
+        val env = onDeviceEnv(FakeOnDeviceBackend(transcribe = { _, _ -> "本机接手" }), entry)
+        catalog.setSttSelection(SttSelection.Model(primary))
+        assertTrue(catalog.setFallback(VoiceCapability.STT, 0, OnDeviceCatalog.ref("sense")))
+
+        val text = env.stt.transcribeChain(context, listOf(primary) + env.stt.backupsFor(primary), "zh-CN")(wav)
+        assertEquals("本机接手", text)
+    }
+
     @Test fun emptyTextIsNotFailure() {
         val entry = testPackEntry("sense")
         installTestPack(packs, entry)
