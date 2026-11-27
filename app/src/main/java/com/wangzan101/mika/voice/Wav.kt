@@ -34,22 +34,25 @@ object Wav {
      */
     fun decode(wav: ByteArray): ShortArray {
         val buf = ByteBuffer.wrap(wav).order(ByteOrder.LITTLE_ENDIAN)
-        var off = 12
-        var start = HEADER
-        var size = wav.size - HEADER
-        while (off + 8 <= wav.size) {
-            val id = String(wav, off, 4, Charsets.US_ASCII)
-            val len = buf.getInt(off + 4)
+        val end = wav.size.toLong()
+        var start = HEADER.toLong()
+        var stop = end
+        // 偏移按 Long 算:块长度是无符号 32 位,坏文件里的大长度不能溢出成负数或越界
+        var off = 12L
+        while (off + 8 <= end) {
+            val id = String(wav, off.toInt(), 4, Charsets.US_ASCII)
+            val len = buf.getInt(off.toInt() + 4).toLong() and 0xFFFF_FFFFL
             if (id == "data") {
                 start = off + 8
-                size = len
+                // 长度超出文件(录音时没写回长度、或文件被截断)按读到文件末尾处理
+                stop = if (start + len > end) end else start + len
                 break
             }
-            if (len < 0) break
             off += 8 + len + (len and 1)
         }
-        size = size.coerceIn(0, (wav.size - start).coerceAtLeast(0))
-        return ShortArray(size / 2) { i -> buf.getShort(start + 2 * i) }
+        if (start >= stop) return ShortArray(0)
+        val s = start.toInt()
+        return ShortArray(((stop - start) / 2).toInt()) { i -> buf.getShort(s + 2 * i) }
     }
 
     /** 一段全零的静音 WAV,用来试探某个模型能不能转文字(不需要真录音)。 */

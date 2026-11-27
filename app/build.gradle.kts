@@ -33,8 +33,9 @@ android {
     packaging {
         jniLibs {
             useLegacyPackaging = true
-            // 离线识别(sherpa-onnx AAR)只用 arm64-v8a;AAR 里另外几种架构的库不打进 APK,别的设备显示「此设备不支持离线识别」
-            excludes += listOf("lib/armeabi-v7a/libsherpa-onnx-jni.so", "lib/x86/libsherpa-onnx-jni.so", "lib/x86/libonnxruntime.so", "lib/x86_64/libsherpa-onnx-jni.so")
+            // 离线识别(sherpa-onnx AAR)只用 arm64-v8a;AAR 里另外几种架构的库不打进 APK,别的设备显示「此设备不支持离线识别」。
+            // 按文件名前缀排除(以后版本多出的 sherpa/onnxruntime 库也排除);不整目录排除,ML Kit 等别的库这些架构照常带
+            excludes += listOf("armeabi-v7a", "x86", "x86_64").flatMap { abi -> listOf("lib/$abi/libsherpa-onnx*.so", "lib/$abi/libonnxruntime*.so") }
         }
     }
 

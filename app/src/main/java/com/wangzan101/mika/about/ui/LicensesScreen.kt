@@ -79,7 +79,7 @@ object Licenses {
         Entry("sherpa-onnx", "Apache-2.0", "版本 2.0.3(静态链接 ONNX Runtime 的 AAR,只带 arm64-v8a),本机离线语音识别。https://github.com/k2-fsa/sherpa-onnx"),
         Entry("ONNX Runtime", "MIT", "由 sherpa-onnx 静态链接,离线识别的推理引擎。Copyright (c) Microsoft Corporation. https://github.com/microsoft/onnxruntime"),
         Entry("SenseVoice Small(离线识别语音包)", "FunASR Model License 1.1", "不随安装包发布,下载语音包后存在手机上。FunAudioLLM(阿里巴巴集团通义实验室)。https://github.com/FunAudioLLM/SenseVoice"),
-        Entry("Dolphin Base(离线识别语音包)", "Apache-2.0", "不随安装包发布,下载语音包后存在手机上。DataoceanAI 与清华大学。https://github.com/DataoceanAI/Dolphin"),
+        Entry("Dolphin Base(离线识别语音包)", "Apache-2.0", "不随安装包发布,下载语音包后存在手机上。Copyright 2025 DataoceanAI. https://github.com/DataoceanAI/Dolphin"),
         Entry("Whisper(离线识别语音包)", "MIT", "不随安装包发布,下载语音包后存在手机上。Copyright (c) 2022 OpenAI. https://github.com/openai/whisper"),
     )
 }

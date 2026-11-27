@@ -513,7 +513,7 @@ FunASR 模型开源协议
 
 ## Dolphin Base(离线识别语音包)
 
-- Project: https://github.com/DataoceanAI/Dolphin(DataoceanAI 与清华大学);CTC 分支与 ONNX 转换:k2-fsa/sherpa-onnx
+- Project: https://github.com/DataoceanAI/Dolphin(DataoceanAI);CTC 分支与 ONNX 转换:k2-fsa/sherpa-onnx
 - License: Apache-2.0;Copyright 2025 DataoceanAI
 - Usage: 不随 APK 发布;用户下载 `dolphin-base-ctc-int8` 语音包后,模型文件和许可证全文一起存到手机上,用于本机离线识别。
 

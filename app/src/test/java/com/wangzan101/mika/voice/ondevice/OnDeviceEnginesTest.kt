@@ -27,8 +27,10 @@ class OnDeviceEnginesTest {
     private class FakeEngine : OnDeviceSttEngine {
         @Volatile var closed = false
         var gate: CompletableDeferred<Unit>? = null
+        var failure: Throwable? = null
         override suspend fun transcribe(pcm: ShortArray, language: String?): String {
             gate?.await()
+            failure?.let { throw it }
             check(!closed) { "transcribe on a closed engine" }
             return "hello"
         }
@@ -111,6 +113,10 @@ class OnDeviceEnginesTest {
         try {
             expectKind(OnDeviceSttException.Kind.Timeout) { engines.engine(pack()) }
             assertTrue(currentTime >= OnDeviceTimeout.LOAD_TIMEOUT_MS)
+            // 那次加载还卡着:后来的调用直接报超时,不再等一整个上限
+            val before = currentTime
+            expectKind(OnDeviceSttException.Kind.Timeout) { engines.engine(pack()) }
+            assertEquals(before, currentTime)
         } finally {
             stuck.countDown()
         }
@@ -200,6 +206,30 @@ class OnDeviceEnginesTest {
         backend.nextGate = null
         assertEquals("hello", engines.engine(pack()).transcribe(ShortArray(1), null))
         assertEquals(2, backend.loads.size)
+    }
+
+    @Test
+    fun decodeErrorsMapToCorruptAndKeepTheirKind() = runTest {
+        val backend = FakeBackend()
+        val engines = engines(backend)
+        val engine = engines.engine(pack())
+        backend.loads[0].failure = IllegalStateException("native decode failed")
+        expectKind(OnDeviceSttException.Kind.Corrupt) { engine.transcribe(ShortArray(1), null) }
+        backend.loads[0].failure = OnDeviceSttException(OnDeviceSttException.Kind.Missing, "gone")
+        expectKind(OnDeviceSttException.Kind.Missing) { engine.transcribe(ShortArray(1), null) }
+        // 出错不拆模型,下次照常用
+        backend.loads[0].failure = null
+        assertEquals("hello", engine.transcribe(ShortArray(1), null))
+    }
+
+    @Test
+    fun closingTheHandleKeepsTheSharedEngine() = runTest {
+        val backend = FakeBackend()
+        val engines = engines(backend)
+        engines.engine(pack()).use { it.transcribe(ShortArray(1), null) }
+        assertFalse(backend.loads[0].closed)
+        assertEquals("hello", engines.engine(pack()).transcribe(ShortArray(1), null))
+        assertEquals(1, backend.loads.size)
     }
 
     @Test

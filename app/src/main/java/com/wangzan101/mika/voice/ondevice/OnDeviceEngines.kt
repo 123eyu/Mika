@@ -29,6 +29,8 @@ class OnDeviceEngines(
     private inner class Slot(val version: Int) {
         val ready = CompletableDeferred<Held>()
         @Volatile var held: Held? = null
+        /** 有人等这次加载等到了超时;之后再来的不再干等,直接报超时,直到它真加载完。 */
+        @Volatile var timedOut = false
     }
 
     private val lock = Any()
@@ -43,8 +45,14 @@ class OnDeviceEngines(
     suspend fun engine(pack: InstalledVoicePack): OnDeviceSttEngine {
         if (!usable(pack)) throw OnDeviceSttException(OnDeviceSttException.Kind.Unsupported, "no backend for ${pack.entry.backend}/${pack.entry.family} on this device")
         val slot = slot(pack)
+        val timeout = { OnDeviceSttException(OnDeviceSttException.Kind.Timeout, "loading ${pack.entry.id} took over ${OnDeviceTimeout.LOAD_TIMEOUT_MS} ms") }
+        // 卡住的加载还没做完:不再每次干等一整个上限;它晚些做完了照常用
+        if (slot.timedOut && !slot.ready.isCompleted) throw timeout()
         val held = withTimeoutOrNull(OnDeviceTimeout.LOAD_TIMEOUT_MS) { slot.ready.await() }
-            ?: throw OnDeviceSttException(OnDeviceSttException.Kind.Timeout, "loading ${pack.entry.id} took over ${OnDeviceTimeout.LOAD_TIMEOUT_MS} ms")
+            ?: run {
+                slot.timedOut = true
+                throw timeout()
+            }
         held.touch()
         return held
     }
@@ -137,8 +145,14 @@ class OnDeviceEngines(
             try {
                 val text = try {
                     inner.transcribe(pcm, language)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: OnDeviceSttException) {
+                    throw e
                 } catch (e: OutOfMemoryError) {
                     throw OnDeviceSttException(OnDeviceSttException.Kind.OutOfMemory, "out of memory transcribing with $packId", e)
+                } catch (e: Throwable) {
+                    throw OnDeviceSttException(OnDeviceSttException.Kind.Corrupt, "on-device model $packId failed to transcribe: ${e.message}", e)
                 }
                 synchronized(this) { retired }?.let { throw released(it) }
                 return text
@@ -174,11 +188,11 @@ class OnDeviceEngines(
             if (closeNow) inner.close()
         }
 
-        /** 调用方不该关共用的模型;关了等于释放这个包(只在它还是当前那份时)。 */
-        override fun close() {
-            synchronized(lock) { if (slots[packId] === slot) slots.remove(packId) }
-            retire(OnDeviceSttException.Kind.Missing)
-        }
+        /**
+         * 不做事:这是共用的模型,调用方 `engine(pack).use {}` 不该把它扔掉。
+         * 释放只经 [OnDeviceEngines.release]、`release(packId)` 和闲置计时。
+         */
+        override fun close() = Unit
 
         private fun scheduleIdle() {
             idleJob?.cancel()
