@@ -105,6 +105,7 @@ import com.wangzan101.mika.ui.theme.MikaShapes
 import com.wangzan101.mika.voice.model.VoiceModelError
 import com.wangzan101.mika.voice.HoldToTalk
 import com.wangzan101.mika.voice.SpeechEngineSpec
+import com.wangzan101.mika.voice.model.VoiceModelEnvironment
 import com.wangzan101.mika.voice.SpeechFailure
 import com.wangzan101.mika.voice.VoiceSource
 import kotlinx.coroutines.CoroutineScope
@@ -244,6 +245,8 @@ internal object VoiceCopy {
         is SpeechFailure.Provider -> when (why.error) {
             // 本机语音包没装:和开不了会话时同一句「需要下载」
             is VoiceModelError.PackMissing -> unavailable(SpeechEngineSpec.Why.VoicePackMissing)
+            // 本机识别失败(文件坏了、加载不了):说该怎么办,不露英文的原因
+            is VoiceModelError.OnDeviceFailed -> tr(R.string.voice_pack_corrupt_error)
             // 服务商的错沿用模型出错时的说法(额度、Key、找不到模型……)
             else -> tr(R.string.voice_provider_failed, why.error.message.orEmpty())
         }
@@ -265,6 +268,12 @@ internal object VoiceCopy {
         SpeechEngineSpec.Why.Off -> tr(R.string.voice_unavailable_off)
         SpeechEngineSpec.Why.VoicePackMissing -> tr(R.string.voice_unavailable_pack_missing)
         SpeechEngineSpec.Why.OnDeviceUnsupported -> tr(R.string.voice_unavailable_on_device_unsupported)
+    }
+
+    /** 「还不能语音输入」里要不要给「下载离线语音包」:没有能用的识别、自带识别不响应、选的语音包没装。 */
+    fun offersVoicePacks(why: SpeechEngineSpec.Why): Boolean = when (why) {
+        SpeechEngineSpec.Why.NoSystemNoModel, SpeechEngineSpec.Why.SystemNoResponse, SpeechEngineSpec.Why.VoicePackMissing -> true
+        else -> false
     }
 
     /** 最后十秒的倒数;还早时为 null。 */
@@ -742,10 +751,22 @@ internal fun Modifier.voiceDim(on: Boolean, reduceMotion: Boolean): Modifier {
 /** 「还不能语音输入」(「去选」到设置里选转文字)和录音权限的说明(「去设置」到系统里 Mika 的权限页)。 */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun VoiceSheetHost(vh: VoiceHold, onPickSpeech: () -> Unit) {
+internal fun VoiceSheetHost(
+    vh: VoiceHold,
+    onPickSpeech: () -> Unit,
+    onOpenVoicePacks: () -> Unit = {},
+    /** 这台设备有没有能跑的离线语音包(没有就不给「下载离线语音包」);null 是看 App 里的语音包环境。测试里换掉。 */
+    voicePacksAvailable: (() -> Boolean)? = null,
+) {
     val sheet = vh.sheet ?: return
     val c = MikaTheme.colors
     val context = LocalContext.current
+    val packsHere = remember(sheet) {
+        (sheet as? VoiceSheet.Unavailable)?.let { VoiceCopy.offersVoicePacks(it.why) } == true &&
+            (voicePacksAvailable?.invoke() ?: VoiceModelEnvironment.get(context).hasRunnableVoicePacks())
+    }
+    // 语音包缺了:主按钮就是去下载;别的没引擎的情况在下面再加一个
+    val packFirst = packsHere && (sheet as VoiceSheet.Unavailable).why == SpeechEngineSpec.Why.VoicePackMissing
     val title: String
     val body: String
     val action: String
@@ -754,8 +775,8 @@ internal fun VoiceSheetHost(vh: VoiceHold, onPickSpeech: () -> Unit) {
         is VoiceSheet.Unavailable -> {
             title = stringResource(R.string.voice_unavailable_title)
             body = VoiceCopy.unavailable(sheet.why)
-            action = stringResource(R.string.voice_go_pick)
-            go = onPickSpeech
+            action = stringResource(if (packFirst) R.string.voice_go_voice_packs else R.string.voice_go_pick)
+            go = if (packFirst) onOpenVoicePacks else onPickSpeech
         }
         is VoiceSheet.ServicePermission -> {
             val service = sheet.service
@@ -800,6 +821,15 @@ internal fun VoiceSheetHost(vh: VoiceHold, onPickSpeech: () -> Unit) {
             Row(Modifier.fillMaxWidth().padding(top = 18.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 MikaButton(stringResource(R.string.ok_got_it), { vh.sheet = null }, Modifier.weight(1f), kind = ButtonKind.Tonal, size = ButtonSize.Medium)
                 MikaButton(action, { vh.sheet = null; go() }, Modifier.weight(1f), size = ButtonSize.Medium)
+            }
+            if (packsHere && !packFirst) {
+                MikaButton(
+                    stringResource(R.string.voice_go_voice_packs),
+                    { vh.sheet = null; onOpenVoicePacks() },
+                    Modifier.fillMaxWidth().padding(top = 10.dp).testTag("voice-sheet-voice-packs"),
+                    kind = ButtonKind.Tonal,
+                    size = ButtonSize.Medium,
+                )
             }
         }
     }
