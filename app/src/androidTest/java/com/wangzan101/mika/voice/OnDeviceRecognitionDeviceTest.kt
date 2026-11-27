@@ -4,11 +4,11 @@ import android.os.SystemClock
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.wangzan101.mika.voice.ondevice.InstalledVoicePack
 import com.wangzan101.mika.voice.ondevice.OnDeviceBackends
 import com.wangzan101.mika.voice.ondevice.OnDeviceEngines
 import com.wangzan101.mika.voice.ondevice.SherpaOnnxBackend
 import com.wangzan101.mika.voice.ondevice.VoicePackCatalog
+import com.wangzan101.mika.voice.ondevice.VoicePackStore
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,13 +26,14 @@ import org.junit.runner.RunWith
  * 记下加载和识别用时(logcat 标签 `OnDeviceSttTest`)。
  *
  * 语音包不随测试安装,没装时跳过(assumeTrue)。装法:在 App 的语音包界面下载 SenseVoice Small,
- * 或者手动放到调试包的 `files/voice-packs/sensevoice-small-int8/<清单里的版本>/`,文件名照 catalog.json
- * (`-PdevInstall` 构建时包名是 `com.wangzan101.mika.dev`;语音包的正式安装目录由 VoicePackStore 定,到时以它为准):
+ * 或者手动放进调试包的安装目录 `files/voice-models/sensevoice-small-int8/<清单里的版本>/`(由 [VoicePackStore] 定),
+ * 文件名、大小都要和 catalog.json 一致,许可证文件 `LICENSE` 也要在,否则 [VoicePackStore.installed] 不认
+ * (`-PdevInstall` 构建时包名是 `com.wangzan101.mika.dev`):
  * ```
  * adb push model.int8.onnx tokens.txt LICENSE /data/local/tmp/sv/
- * adb shell run-as com.wangzan101.mika mkdir -p files/voice-packs/sensevoice-small-int8/1
+ * adb shell run-as com.wangzan101.mika mkdir -p files/voice-models/sensevoice-small-int8/1
  * adb shell run-as com.wangzan101.mika cp /data/local/tmp/sv/model.int8.onnx /data/local/tmp/sv/tokens.txt \
- *     /data/local/tmp/sv/LICENSE files/voice-packs/sensevoice-small-int8/1/
+ *     /data/local/tmp/sv/LICENSE files/voice-models/sensevoice-small-int8/1/
  * ```
  * 非 arm64 设备也跳过(这个后端只带 arm64-v8a 的库)。
  */
@@ -45,8 +46,9 @@ class OnDeviceRecognitionDeviceTest {
         assumeTrue("needs arm64-v8a", SherpaOnnxBackend().abiSupported())
         val backends = OnDeviceBackends()
         val entry = VoicePackCatalog.load(context, backends::supports).entry(PACK)!!
-        val pack = InstalledVoicePack(entry, File(context.filesDir, "voice-packs/${entry.id}/${entry.version}"))
-        assumeTrue("voice pack not installed at ${pack.dir}", entry.files.all { File(pack.dir, it.name).isFile })
+        val store = VoicePackStore(File(context.filesDir, "voice-models"))
+        val pack = store.installed(entry)
+        assumeTrue("voice pack ${entry.id} v${entry.version} not installed (${store.status(entry)})", pack != null)
 
         val wav = InstrumentationRegistry.getInstrumentation().context.assets.open(FIXTURE).use { it.readBytes() }
         val pcm = Wav.decode(wav)
@@ -55,7 +57,7 @@ class OnDeviceRecognitionDeviceTest {
         val engines = OnDeviceEngines(backends, scope)
         try {
             val t0 = SystemClock.elapsedRealtime()
-            val engine = engines.engine(pack)
+            val engine = engines.engine(pack!!)
             val loadMs = SystemClock.elapsedRealtime() - t0
 
             val t1 = SystemClock.elapsedRealtime()
