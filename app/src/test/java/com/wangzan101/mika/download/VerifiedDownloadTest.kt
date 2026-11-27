@@ -187,6 +187,27 @@ class VerifiedDownloadTest {
         assertEquals("two", File(dir, "b").readText())
     }
 
+    /** join 等到取消的任务真正停下(进度早就回到 Idle);没有任务时立刻返回。 */
+    @Test fun joinWaitsForCancelledJobToEnd() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        try {
+            val d = VerifiedDownload(http, scope)
+            kotlinx.coroutines.runBlocking { withTimeout(1_000) { d.join("none") } }
+            server.enqueue(MockResponse().setBody(okio.Buffer().write(ByteArray(100_000))).throttleBody(1024, 100, TimeUnit.MILLISECONDS))
+            var verified = false
+            val target = File(dir, "big")
+            d.start("pack", listOf(DownloadFile(target, listOf(url("/big")), { verified = true })))
+            waitFor { d.progress("pack").value.doneBytes > 0 }
+            d.cancel("pack")
+            kotlinx.coroutines.runBlocking { withTimeout(3_000) { d.join("pack") } }
+            assertFalse(File(dir, "big.part").exists())
+            assertFalse(target.exists())
+            assertFalse("verify never ran for a cancelled file", verified)
+        } finally {
+            scope.cancel()
+        }
+    }
+
     @Test fun cancelStopsConnectionAndDeletesPart() {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         try {

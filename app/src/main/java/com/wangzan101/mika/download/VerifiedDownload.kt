@@ -130,6 +130,15 @@ class VerifiedDownload(
     @Synchronized
     fun progress(key: String): StateFlow<DownloadProgress> = flow(key).asStateFlow()
 
+    /**
+     * 等 [key] 最近的任务彻底结束(包括 [cancel] 之后连接断开、半截文件清掉、`onComplete` 跑完);没有就立刻返回。
+     * 调用方要在任务结束后清理自己的东西(比如语音包的 staging)时用它,不能只看进度:取消时进度立刻回到 Idle,任务可能还没停。
+     */
+    suspend fun join(key: String) {
+        val job = synchronized(this) { last[key] }
+        job?.join()
+    }
+
     /** 停掉 [key] 的任务:连带掐断连接,不等读完这一块;正在下的半截文件删掉,进度回到 [DownloadPhase.Idle]。 */
     @Synchronized
     fun cancel(key: String) {
