@@ -22,6 +22,8 @@ import com.wangzan101.mika.voice.ondevice.VoicePackCatalog
 import com.wangzan101.mika.voice.ondevice.VoicePackEntry
 import com.wangzan101.mika.voice.ondevice.VoicePackStore
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
@@ -73,17 +75,27 @@ class OnDeviceSttAdapter(
             // 每次现查:文件后来才下好也能直接用,删掉了就报「需要下载」
             val entry = entry(packId)
             val pack = installed(entry)
-            val pcm = Wav.decode(wav)
-            val code = OnDeviceLanguage.pick(language, entry.languages)
             try {
+                val pcm = Wav.decode(wav)
+                val code = OnDeviceLanguage.pick(language, entry.languages)
                 // 等模型加载(有自己的上限)不算在识别预算里
                 val engine = engines.engine(pack)
                 val budget = budgetMs(pcm.size)
+                // 原生解码在 OnDeviceEngines 里单独跑,这里到点就能返回,不等它
                 withTimeoutOrNull(budget) { engine.transcribe(pcm, code) }
                     // 记成本机失败,不是网络超时:慢机器上不该显示「连不上」
                     ?: throw VoiceModelError.OnDeviceFailed("On-device recognition took longer than $budget ms")
             } catch (e: OnDeviceSttException) {
                 throw mapped(e, entry)
+            } catch (e: VoiceModelError) {
+                throw e
+            } catch (e: CancellationException) {
+                // 调用方自己被取消就照常往外传;调用方还在等,却拿到取消(比如加载被取消),算这一次本机失败,换下一个
+                currentCoroutineContext().ensureActive()
+                throw VoiceModelError.OnDeviceFailed("On-device recognition was cancelled", e)
+            } catch (e: Exception) {
+                // 音频解不开、选语言出错等意外:也算本机失败,一定能换下一个(否则会被当成协议错误停在这里)
+                throw VoiceModelError.OnDeviceFailed("On-device recognition failed: ${e.message}", e)
             }
         }
     }

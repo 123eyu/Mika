@@ -13,6 +13,7 @@ import com.wangzan101.mika.voice.model.VoiceAdapterRegistry
 import com.wangzan101.mika.voice.model.VoiceCapability
 import com.wangzan101.mika.voice.model.VoiceCatalogStore
 import com.wangzan101.mika.voice.model.VoiceErrorCategory
+import com.wangzan101.mika.voice.model.VoiceFailover
 import com.wangzan101.mika.voice.model.VoiceModelError
 import com.wangzan101.mika.voice.model.voiceTestEnvironment
 import com.wangzan101.mika.voice.ondevice.EngineOptions
@@ -29,11 +30,14 @@ import com.wangzan101.mika.voice.ondevice.VoicePackEntry
 import com.wangzan101.mika.voice.ondevice.VoicePackFile
 import com.wangzan101.mika.voice.ondevice.VoicePackLicense
 import com.wangzan101.mika.voice.ondevice.VoicePackStore
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.delay
@@ -55,6 +59,9 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.util.Collections
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
 
 /** 假的本机后端:加载立刻完成,识别按 [transcribe] 给结果;记下每次识别收到的语言。 */
@@ -65,6 +72,7 @@ internal class FakeOnDeviceBackend(
 ) : OnDeviceSttBackend {
     val languages: MutableList<String?> = Collections.synchronizedList(mutableListOf())
     val calls: MutableList<Int> = Collections.synchronizedList(mutableListOf())
+    val closes = AtomicInteger()
     override val id = "fake"
     override fun supports(family: String) = family == "f"
     override fun abiSupported() = abi
@@ -76,7 +84,7 @@ internal class FakeOnDeviceBackend(
                 calls += pcm.size
                 return this@FakeOnDeviceBackend.transcribe(pcm, language)
             }
-            override fun close() {}
+            override fun close() { closes.incrementAndGet() }
         }
     }
 }
@@ -270,5 +278,84 @@ class OnDeviceSttAdapterTest {
         // 原因链里有服务商错误也不带上:本机失败永远不当成 ModelError.Network
         val wrapped = VoiceModelError.OnDeviceFailed("x", RuntimeException(ModelError.Network()))
         assertTrue(generateSequence<Throwable>(wrapped) { it.cause }.none { it is ModelError })
+    }
+    /** 真正的原生解码会占住线程、取消不了:到点要立刻换下一个,原生模型等解码结束才关。 */
+    @Test fun blockingDecodeIsBoundedByBudgetAndEngineOutlivesIt() = runBlocking {
+        val entry = testPackEntry()
+        installTestPack(root, entry)
+        val unblock = CountDownLatch(1)
+        val started = CountDownLatch(1)
+        val backend = FakeOnDeviceBackend(transcribe = { _, _ ->
+            started.countDown()
+            // 线程阻塞,不是挂起:模拟 JNI 解码
+            unblock.await(10, TimeUnit.SECONDS)
+            "晚了"
+        })
+        val engines = OnDeviceEngines(OnDeviceBackends(listOf(backend)), CoroutineScope(SupervisorJob() + Dispatchers.Default))
+        val adapter = testOnDeviceAdapter(root, backend, entry, engines = engines, budgetMs = { 200 })
+        val model = resolved(adapter, entry)
+        try {
+            val begin = System.nanoTime()
+            val error = runCatching { adapter.utterance(context, model, "zh-CN")(wavOf(1)) }.exceptionOrNull()
+            val tookMs = (System.nanoTime() - begin) / 1_000_000
+            assertTrue("要报本机失败,实际 $error", error is VoiceModelError.OnDeviceFailed)
+            assertTrue("预算 200 ms,用了 $tookMs ms", tookMs < 2_000)
+            assertTrue("本机超时要换下一个", VoiceFailover.canTryNext(error!!))
+            assertTrue(started.await(1, TimeUnit.SECONDS))
+
+            // 上一次还卡着:下一句不排队等它,直接报本机失败换下一个
+            val next = runCatching { adapter.utterance(context, model, "zh-CN")(wavOf(1)) }.exceptionOrNull()
+            assertTrue("实际 $next", next is VoiceModelError.OnDeviceFailed)
+            assertTrue(VoiceFailover.canTryNext(next!!))
+            assertEquals("第二句没碰原生模型", 1, backend.calls.size)
+
+            // 内存紧张要释放:解码还在用原生模型,不能关
+            engines.release()
+            assertEquals(0, backend.closes.get())
+        } finally {
+            unblock.countDown()
+        }
+        val deadline = System.nanoTime() + 5_000_000_000L
+        while (backend.closes.get() == 0 && System.nanoTime() < deadline) Thread.sleep(10)
+        assertEquals("解码结束后才关", 1, backend.closes.get())
+    }
+
+    @Test fun unexpectedErrorsBecomeOnDeviceFailed() = runBlocking {
+        val entry = testPackEntry()
+        installTestPack(root, entry)
+        // 调用方还在等,却拿到取消(比如加载被取消):算本机失败,不能让会话一直卡着
+        val cancelled = FakeOnDeviceBackend(transcribe = { _, _ -> throw java.util.concurrent.CancellationException("load cancelled") })
+        val a = testOnDeviceAdapter(root, cancelled, entry)
+        val e1 = runCatching { a.utterance(context, resolved(a, entry), "zh-CN")(wavOf(1)) }.exceptionOrNull()
+        assertTrue("实际 $e1", e1 is VoiceModelError.OnDeviceFailed)
+        assertTrue(VoiceFailover.canTryNext(e1!!))
+
+        // 别的意外异常:也换下一个,不当成协议错误
+        val b = testOnDeviceAdapter(root, FakeOnDeviceBackend(), entry, budgetMs = { throw IllegalStateException("boom") })
+        val e2 = runCatching { b.utterance(context, resolved(b, entry), "zh-CN")(wavOf(1)) }.exceptionOrNull()
+        assertTrue("实际 $e2", e2 is VoiceModelError.OnDeviceFailed)
+        assertTrue(VoiceFailover.canTryNext(e2!!))
+        assertTrue(generateSequence<Throwable>(e2) { it.cause }.none { it is ModelError })
+    }
+
+    @Test fun callerCancellationStillPropagates() = runBlocking {
+        val entry = testPackEntry()
+        installTestPack(root, entry)
+        val started = CompletableDeferred<Unit>()
+        val backend = FakeOnDeviceBackend(transcribe = { _, _ -> started.complete(Unit); awaitCancellation() })
+        val adapter = testOnDeviceAdapter(root, backend, entry)
+        val model = resolved(adapter, entry)
+        var thrown: Throwable? = null
+        val call = launch(Dispatchers.Default) {
+            try {
+                adapter.utterance(context, model, "zh-CN")(wavOf(1))
+            } catch (e: Throwable) {
+                thrown = e
+                throw e
+            }
+        }
+        started.await()
+        call.cancelAndJoin()
+        assertTrue("调用方自己取消,不报本机失败,实际 $thrown", thrown is kotlinx.coroutines.CancellationException)
     }
 }
