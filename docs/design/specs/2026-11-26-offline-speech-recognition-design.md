@@ -1,6 +1,6 @@
 # 本机离线语音识别 设计
 
-> 日期：2026-11-26 · 状态：已批准（2026-11-26） · 范围：语音输入（按住说话、胶囊）的离线识别。不含朗读、实时通话、文件转写
+> 日期：2026-11-26 · 状态：已实现（2026-11-27；批准于 2026-11-26） · 范围：语音输入（按住说话、胶囊）的离线识别。不含朗读、实时通话、文件转写
 
 ## 1. 为什么要做
 
@@ -8,7 +8,7 @@
   - 手机自带的识别服务（`SystemSpeech`）。不少机型没有这个服务，或者有但不响应。
   - 云端模型（`ProviderSpeech` 等）。要用户自己去配服务商。
 
-  手机没有可用的识别服务、用户也没配语音模型时，`SpeechResolver` 只能给出 `NoSystemNoModel` 或 `SystemNoResponse`，语音输入整个不可用。
+  手机没有可用的识别服务、用户也没配语音模型时，`SpeechResolver` 只能给出 `Why.NoSystemNoModel` 或 `Why.SystemNoResponse`，语音输入整个不可用。
 - **备援链缺一个不会失败的结尾。** #880 加了语音输入备援链，但链上全是云端模型，会一起遇到断网、限流和欠费。本机模型断网能用、不限流，适合放在链的最后。
 - **隐私。** 音频不离开手机。
 
@@ -80,29 +80,35 @@
 
 上表已按 §8 的实测改过（2026-11-26）。「效果有限」指实测没达到 §7 的准确率要求，但前三个包里它最好。确切的仓库、提交、文件大小和哈希见 §8。
 
-**清单**是 `app/src/main/assets/voice-models/catalog.json`，随 APK 发布，也就是信任锚。每个包包含：
+**清单**是 `app/src/main/assets/voice-models/catalog.json`，随 APK 发布，也就是信任锚。实际格式（由 `tools/voice-models/publish.py` 从 `packs.json` 生成，解析见 `voice/ondevice/VoicePackCatalog.kt`）：
 
 ```json
 {
-  "id": "sensevoice-small-int8",
-  "version": 1,
-  "backend": "sherpa-onnx",         // 用哪个推理后端跑（§5.4.1）
-  "family": "sense_voice",          // 后端里的模型类型；sherpa-onnx 里对应离线识别的模型配置
-  "displayName": "SenseVoice Small",
-  "languages": ["zh", "en", "ja", "ko", "yue"],      // 模型能识别的语言（ISO 639 语言部分）
-  "recommendedFor": ["zh-Hans", "zh-Hant", "en", "ja", "ko"],  // App 界面语言代码，与 AppLanguage 一致（印尼语是 id，不是 in）
-  "files": [
-    { "name": "model.int8.onnx", "role": "model", "size": 0, "sha256": "…" },
-    { "name": "tokens.txt", "role": "tokens", "size": 0, "sha256": "…" }
-  ],
-  "license": { "name": "FunASR Model License 1.1", "file": "LICENSE", "attribution": "SenseVoice by FunAudioLLM (Alibaba Group)" },
-  "sources": {
-    "release": "https://github.com/wangzan101/Mika/releases/download/voice-models-v1/sensevoice-small-int8/",
-    "upstream": "https://huggingface.co/<repo>/resolve/<固定的提交哈希>/"
-  }
+  "schema": 1,                       // 清单结构版本，对不上算打包错误
+  "release": "https://github.com/wangzan101/Mika/releases/download/voice-models-v1/",  // Release 下载前缀，所有包共用
+  "packs": [
+    {
+      "id": "sensevoice-small-int8",
+      "version": 1,
+      "backend": "sherpa-onnx",         // 用哪个推理后端跑（§5.4.1）
+      "family": "sense_voice",          // 后端里的模型类型；sherpa-onnx 里对应离线识别的模型配置
+      "displayName": "SenseVoice Small",
+      "languages": ["zh", "en", "ja", "ko", "yue"],      // 模型能识别的语言（ISO 639 语言部分）
+      "recommendedFor": ["zh-Hans", "zh-Hant", "en", "ja", "ko"],  // App 界面语言代码，与 AppLanguage 一致（印尼语是 id，不是 in）
+      "files": [
+        { "name": "model.int8.onnx", "role": "model", "size": 239233841, "sha256": "c71f0ce0…cd51" },
+        { "name": "tokens.txt", "role": "tokens", "size": 315894, "sha256": "f449eb28…a1dc" },
+        { "name": "LICENSE", "role": "license", "size": 5306, "sha256": "7dba975a…84f8",
+          "url": "https://raw.githubusercontent.com/modelscope/FunASR/58830eca4012644aac0c3218c3ccc7d98f003fda/MODEL_LICENSE" }
+      ],
+      "license": { "name": "FunASR Model License 1.1", "file": "LICENSE", "attribution": "SenseVoice Small by FunAudioLLM (Tongyi Lab, Alibaba Group), …" },
+      "upstream": "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/"
+    }
+  ]
 }
 ```
 
+- Release 地址是顶层 `release` 加 `<包id>--<文件名>`。上游地址是包的 `upstream` 加文件名；文件不在那里时（许可文件）在这个文件上单独写 `url`，同样固定到提交。
 - 许可文件本身也作为一个文件列在 `files` 里，一起校验、一起放进安装目录。
 - 清单只在发新版 App 时更新。App 不从网络读清单，这样别人改不了它要下载什么。
 - 要换模型或修正哈希，就发一版 App。
@@ -113,7 +119,7 @@
 3. 上传到 `voice-models-v1` Release，标为 pre-release，或者设 `make_latest=false`。
 4. 生成 `catalog.json` 里的大小和哈希。
 
-Release 的文件名带包 id 前缀（如 `sensevoice-small-int8--model.int8.onnx`），因为 GitHub Release 附件不支持目录。上面清单里 `release` 字段写成目录形式只是示意，具体怎么拼地址由实现者定。
+Release 的文件名带包 id 前缀（如 `sensevoice-small-int8--model.int8.onnx`），因为 GitHub Release 附件不支持目录。
 
 ### 5.2 下载
 
@@ -136,8 +142,9 @@ Release 的文件名带包 id 前缀（如 `sensevoice-small-int8--model.int8.on
 - **整包原子生效**：
   1. 下到 `voice-models/.staging/<包id>-<版本>/`。
   2. 所有文件都通过后，改名为 `voice-models/<包id>/<版本>/`。
-  3. 写入「已安装」记录。
-  4. 再删掉旧版本。
+  3. 再删掉旧版本。
+
+  没有单独的「已安装」记录文件：版本目录在、清单里每个文件都在且大小对得上，就算装好了（见 §5.2「校验时机」）。
 
   中途失败时清掉 staging，已安装的旧版本不受影响。
 - **网络**：语音包只由用户点「下载」时开始，不在后台自动下载，所以**不绑定 Wi-Fi**。做法和手动下载 App 更新一样：走 `NetProxy`，不绑定网络。
@@ -247,8 +254,8 @@ data class InstalledVoicePack(val entry: VoicePackEntry, val dir: File) {
 
   | 本机失败 | 映射为 | 是否换下一个 |
   |---|---|---|
-  | 语音包未安装或文件缺失 | `IncompleteConfig`（带「未安装」原因） | 是（现有规则：`INCOMPLETE_CONFIG` 为 true） |
-  | 文件损坏、模型加载失败、内存不足 | `SystemUnavailable` 那一类 | 是（现有规则为 true） |
+  | 语音包未安装或文件缺失 | `VoiceModelError.PackMissing`（类别 `INCOMPLETE_CONFIG`） | 是（现有规则：`INCOMPLETE_CONFIG` 为 true） |
+  | 文件损坏、模型加载失败、内存不足 | `VoiceModelError.OnDeviceFailed`（类别 `SYSTEM_UNAVAILABLE`） | 是（现有规则为 true） |
   | 识别超时（§5.4） | 同上，**不是** `ModelError.Network` | 是 |
   | 识别出空文本 | 不算失败，照「没听清」处理 | 否 |
 
@@ -257,12 +264,12 @@ data class InstalledVoicePack(val entry: VoicePackEntry, val dir: File) {
 - **通话不用本机语音包**（第一版）：
   - 和 `SYSTEM_STT_REF` 一样，在 `CascadeEngine.listenRef` 里把 `OnDevice` 模型排除掉。
   - 应用内通话和 AI 接打电话的听写模型选择列表里不显示语音包。
-  - 理由：Whisper 每 5 秒语音要约 4 秒才出字，放到通话里延迟太高。只有离线语音包的用户，通话会得到 `NoListenModel`，这和现在只用手机自带识别的用户一样。以后实测速度够了再单独放开。
+  - 理由：Whisper 每 5 秒语音要约 4 秒才出字，放到通话里延迟太高。只有离线语音包的用户，通话会得到 `StandardBlocker.NoListenModel`，这和现在只用手机自带识别的用户一样。以后实测速度够了再单独放开。
 - **「自动」的顺序**：改 `SpeechResolver` 的 `SpeechChoice.Auto` 分支，以及 `VoiceInput` 开会话时 Auto 对应的模型。
   1. 手机自带识别能用 → 用它（不变，它能边说边出字）。
   2. 否则，有已安装、并且推荐给当前识别语言的语音包 → 用它。
   3. 否则，有任意已安装的语音包 → 用它（模型不支持这个语言时用自动检测）。
-  4. 否则，维持现状（`SystemNoResponse` 或 `NoSystemNoModel`），但提示里加一条入口：「下载离线语音包」。
+  4. 否则，维持现状（`Why.SystemNoResponse` 或 `Why.NoSystemNoModel`），但提示里加一条入口：「下载离线语音包」。
 
   要满足反目标：只有手机自带识别不能用时，才走离线模型。
 
@@ -274,7 +281,7 @@ data class InstalledVoicePack(val entry: VoicePackEntry, val dir: File) {
   - 「从文件导入」「复制下载地址」。
   - 推荐给当前界面语言的那个包排在最前，并标上「推荐」。
 - **语音输入模型的选择列表里**，已安装的包和其他模型并列，标注「本机 · 离线」。
-- **`NoSystemNoModel` / `SystemNoResponse` 的提示里**，加一个直达入口。
+- **`Why.NoSystemNoModel` / `Why.SystemNoResponse` 的提示里**，加一个直达入口。
 - **不在首次启动时推销下载。**
 - **文案**：13 种语言都要翻译，并通过 `python3 tools/i18n/translations.py check`。
 - **无障碍**：进度、状态都要能被读屏读出来。
@@ -378,7 +385,7 @@ data class InstalledVoicePack(val entry: VoicePackEntry, val dir: File) {
 - Kotlin API 和设计一致，包名 `com.k2fsa.sherpa.onnx`：
   - `OfflineRecognizer(assetManager = null, config)`，用文件路径加载。配置不对时构造会抛异常。
   - `createStream()`、`decode(stream)`、`getResult(stream).text`、`release()`。
-  - `OfflineStream.acceptWaveform(samples: FloatArray, sampleRate)`：要的是 -1 到 1 的浮点数，不是 `ShortArray`，要自己转换。
+  - `OfflineStream.acceptWaveform(samples: FloatArray, sampleRate)`：要的是 -1 到 1 的浮点数，不是 `kotlin.ShortArray`，要自己转换。
   - `OfflineModelConfig` 里有 `senseVoice`、`whisper`、`dolphin`，以及共用的 `tokens`、`numThreads`。
   - `senseVoice.language`：空字符串是自动，也可以是 zh、en、ja、ko、yue。`whisper.language`：空字符串是自动。`dolphin` 没有语言参数，总是自动。
 - **Whisper 要设一个流选项**：v2.0.3 默认每秒语音最多出 6 个词元，短指令会被截断。每个流在 `decode` 前调用 `setOption("max_tokens_per_second", "25")`。上面的表就是这样测的。
@@ -410,7 +417,7 @@ data class InstalledVoicePack(val entry: VoicePackEntry, val dir: File) {
 - AAR 是放进仓库还是从源码构建。
 - Release 附件的命名规则、断点续传、余量空间、闲置释放的时间、识别线程数。
 - 导入时的具体交互：选单个 zip，还是选多个文件。
-- 语音包卡片的具体布局，沿用现有 `ListRow` 等组件。
+- 语音包卡片的具体布局，沿用现有 `ListRow(…)` 等组件。
 
 ## 11. 文档
 
