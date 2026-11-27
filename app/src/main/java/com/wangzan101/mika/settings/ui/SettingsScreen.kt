@@ -13,6 +13,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -60,9 +61,11 @@ import com.wangzan101.mika.settings.setVisionGroundingVerified
 import com.wangzan101.mika.task.ParallelCapability
 import com.wangzan101.mika.ui.components.ButtonKind
 import com.wangzan101.mika.ui.components.ButtonSize
+import com.wangzan101.mika.ui.components.FocusTargetHost
 import com.wangzan101.mika.ui.components.GroupCard
 import com.wangzan101.mika.ui.components.GroupLabel
 import com.wangzan101.mika.ui.components.ListRow
+import com.wangzan101.mika.ui.components.LocalFocusTarget
 import com.wangzan101.mika.ui.components.MikaButton
 import com.wangzan101.mika.ui.components.MikaDialog
 import com.wangzan101.mika.ui.components.MikaSwitch
@@ -75,6 +78,7 @@ import com.wangzan101.mika.ui.components.ValueTone
 import com.wangzan101.mika.ui.components.StateCard
 import com.wangzan101.mika.ui.components.StatusPill
 import com.wangzan101.mika.ui.components.TileTone
+import com.wangzan101.mika.ui.components.focusHighlightTarget
 import com.wangzan101.mika.ui.theme.MikaIcons
 import com.wangzan101.mika.ui.theme.MikaTheme
 import com.wangzan101.mika.wechat.WechatConnectionState
@@ -141,6 +145,8 @@ fun SettingsScreen(
     /** 别处的「去暂停页」(如助手已暂停的提示)直接打开「暂停 Mika」页。 */
     openPause: Boolean = false,
     onPauseOpened: () -> Unit = {},
+    /** 模型下的子页(用量、语音输入、朗读、通话方式、语音服务、图片/视频模型),由 Activity 路由打开。 */
+    onOpenModelRoute: ((SettingsModelRoute) -> Unit)? = null,
 ) {
     val configs by store.configs.collectAsState()
     val roles by store.roles.collectAsState()
@@ -156,18 +162,21 @@ fun SettingsScreen(
     ) }
     // 进子页时当前页离开组合,它自己记的滚动位置随之丢掉;有子页可进的几页在这里记,回来接着刚才的位置
     val pageScrolls = rememberSaveable(saver = PageScrolls.Saver) { PageScrolls() }
+    val focusHost = remember { FocusTargetHost() }
     var explaining by remember { mutableStateOf<Problem?>(null) }
     // 「完全退出」先问一句:任务、胶囊和通知都会停
     var confirmingQuit by remember { mutableStateOf(false) }
 
     LaunchedEffect(openPhoneOps) {
         if (openPhoneOps) {
+            focusHost.clear()
             page = SettingsPage.PhoneOps
             onPhoneOpsOpened()
         }
     }
     LaunchedEffect(openPause) {
         if (openPause) {
+            focusHost.clear()
             page = SettingsPage.Pause
             onPauseOpened()
         }
@@ -175,8 +184,8 @@ fun SettingsScreen(
 
     fun fix(f: Fix) = when (f) {
         Fix.AddModel -> onOpenModels()
-        Fix.OpenPhoneOps -> page = SettingsPage.PhoneOps
-        Fix.OpenPause -> page = SettingsPage.Pause
+        Fix.OpenPhoneOps -> { focusHost.clear(); page = SettingsPage.PhoneOps }
+        Fix.OpenPause -> { focusHost.clear(); page = SettingsPage.Pause }
         else -> onFix(f)
     }
     val onProblem: (Problem) -> Unit = { p -> StatusCopy.directFix(p)?.let(::fix) ?: run { explaining = p } }
@@ -255,8 +264,8 @@ fun SettingsScreen(
     // 开发者选项只在调试版和性能测试版里列出:发布版的各开关按评测结果统一定默认值。
     // 主动能力不在里面:入口在设置首页,每个版本都有,默认关着
     val showDeveloper = com.wangzan101.mika.record.DetailedTraces.supportedBuild
-    // 顶栏返回按钮和系统返回键都回到上一层(见 parent()),不要在子页里另写一份
-    val back: () -> Unit = { page = page.parent() }
+    // 顶栏返回按钮和系统返回键都回到上一层(见 parent()),不要在子页里另写一份;离开时丢掉还没用掉的定位请求
+    val back: () -> Unit = { focusHost.clear(); page = page.parent() }
 
     if (page != SettingsPage.Home) BackHandler { back() }
 
@@ -271,17 +280,33 @@ fun SettingsScreen(
         if (personalStart) add(SettingsRequirement.PersonalStart)
         if (onOpenPersonas != null) add(SettingsRequirement.Personas)
         if (onOpenMemory != null) add(SettingsRequirement.Memory)
+        if (onOpenModelRoute != null) add(SettingsRequirement.ModelSubPages)
+        if (parallel != null) add(SettingsRequirement.ParallelTasks)
+        if (status.sdkInt >= 36) add(SettingsRequirement.LiveTaskUpdates)
     }
     val openSearchResult: (SettingsDestination) -> Unit = { d ->
+        // 每次跳转先丢掉上一次没用掉的定位请求,只有页内条目才发新的
+        focusHost.clear()
         when (d) {
-            is SettingsDestination.Page -> page = d.page
+            is SettingsDestination.Page -> {
+                d.item?.let(focusHost::request)
+                if (d.page == SettingsPage.Home) {
+                    searchQuery = ""
+                } else {
+                    page = d.page
+                }
+            }
             SettingsDestination.Models -> onOpenModels()
+            is SettingsDestination.ModelRoute -> onOpenModelRoute?.invoke(d.route)
             SettingsDestination.Plans -> onOpenPlans()
             SettingsDestination.Files -> onOpenFiles()
             SettingsDestination.Personal -> onOpenPersonal()
             SettingsDestination.Personas -> onOpenPersonas?.invoke()
             SettingsDestination.Memory -> onOpenMemory?.invoke()
             SettingsDestination.AutoArchive -> editingAutoArchive = true
+            SettingsDestination.Proxy -> editingProxy = true
+            SettingsDestination.WebSearch -> editingSearch = true
+            SettingsDestination.Quit -> confirmingQuit = true
             SettingsDestination.About -> onOpenAbout()
         }
     }
@@ -291,6 +316,7 @@ fun SettingsScreen(
         page == SettingsPage.Root && !rootState.suPresent -> SettingsPage.Advanced
         else -> page
     }
+    CompositionLocalProvider(LocalFocusTarget provides focusHost) {
     when (visiblePage) {
         SettingsPage.Home -> SettingsContent(
             status = status, androidRelease = androidRelease,
@@ -428,6 +454,7 @@ fun SettingsScreen(
         SettingsPage.Proactive -> com.wangzan101.mika.proactive.ProactiveScreen(onBack = back)
         SettingsPage.Backup -> BackupScreen(onBack = back)
         SettingsPage.Pause -> PauseScreen(onBack = back, onFix = ::fix)
+    }
     }
 
     if (editingProxy) NetProxyDialog(
@@ -643,7 +670,7 @@ internal fun SettingsContent(
             }
             onPersonalStart?.let { change ->
                 val label = stringResource(R.string.settings_personal_start)
-                ListRow(MikaIcons.Spark, label) {
+                ListRow(MikaIcons.Spark, label, modifier = Modifier.focusHighlightTarget(SettingsFocusKey.PERSONAL_START)) {
                     MikaSwitch(personalStart, change, Modifier.semantics { contentDescription = label })
                 }
             }
