@@ -37,6 +37,8 @@ class VoiceModelEnvironment(
     val voicePacks: VoicePackStore? = null,
     /** 随 APK 的语音包清单,第一次用到时读;测试里不用时为 null。 */
     val voicePackCatalog: (() -> VoicePackCatalog)? = null,
+    /** 本机识别引擎(看设备跑不跑得了某个语音包);测试里不用时为 null。 */
+    val voicePackBackends: OnDeviceBackends? = null,
 ) {
     /** Set when the one-time legacy migration failed; the catalog page surfaces it while legacy behavior is retained. */
     @Volatile
@@ -168,6 +170,7 @@ class VoiceModelEnvironment(
                 migrationMarker = marker,
                 voicePacks = packs,
                 voicePackCatalog = packCatalogSource,
+                voicePackBackends = backends,
             )
         }
     }
