@@ -44,7 +44,7 @@ Missing candidates, ambiguous parameters, low probabilities, errors and timeouts
 
 ## Speech to text
 
-The fourth role, used when you hold to talk; pick it under Settings › Models › Speech to text. By default it uses the phone's built-in speech recognition, which shows words as you speak and costs nothing. If the phone has none, or it is not accurate enough, pick a provider's speech model: it transcribes after you finish speaking and uses your quota. The list only shows models whose names look like speech models; for anything else, type the model name in by hand under that provider. Picking runs a short test transcription of silence and only selects the model if it works; otherwise you see why right away. If the phone's recognizer never responds when you hold to talk, Mika tells you and points you here; it never switches to a paid model by itself.
+The fourth role, used when you hold to talk; pick it under Settings › Models › Voice input. By default it uses the phone's built-in speech recognition, which shows words as you speak and costs nothing. If the phone has none, or it is not accurate enough, pick a provider's speech model: it transcribes after you finish speaking and uses your quota. The list only shows models whose names look like speech models; for anything else, type the model name in by hand under that provider. Picking runs a short test transcription of silence and only selects the model if it works; otherwise you see why right away. If the phone's recognizer never responds when you hold to talk, Mika tells you and points you here; it never switches to a paid model by itself.
 
 ### Offline voice packs
 
