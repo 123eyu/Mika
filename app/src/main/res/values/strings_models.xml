@@ -346,7 +346,11 @@
     <string name="video_duration_range" translatable="false">%1$d–%2$d</string>
     <string name="tool_video_generate">Generate video</string>
     <string name="provider_nickname_label">Account nickname</string>
-    <string name="provider_rename_title">Rename account</string> (feat(models): add optional custom provider nicknames, dynamic placeholders, and app-wide rename wiring)
+    <string name="provider_rename_title">Rename account</string>
     <string name="provider_nickname_hint">Optional, e.g. Work or Personal</string>
     <string name="provider_name_with_note">%1$s (%2$s)</string>
+    <string name="model_fallback_move_up">Move up</string>
+    <string name="model_fallback_move_down">Move down</string>
+    <string name="model_fallback_move_up_desc">Move backup #%1$d up</string>
+    <string name="model_fallback_move_down_desc">Move backup #%1$d down</string>
 </resources>

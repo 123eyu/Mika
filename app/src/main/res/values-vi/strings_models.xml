@@ -340,7 +340,11 @@
     <string name="video_choice_stale">Dịch vụ bạn chọn trước đây không còn tạo được video (đã bị xóa hoặc địa chỉ đã thay đổi). Hãy chọn lại bên dưới; trước đó Mika sẽ không tạo video.</string>
     <string name="tool_video_generate">Tạo video</string>
     <string name="provider_nickname_label">Biệt danh tài khoản</string>
-    <string name="provider_rename_title">Đổi tên tài khoản</string> (feat(models): add optional custom provider nicknames, dynamic placeholders, and app-wide rename wiring)
+    <string name="provider_rename_title">Đổi tên tài khoản</string>
     <string name="provider_nickname_hint">Không bắt buộc, ví dụ: Công việc, Cá nhân</string>
     <string name="provider_name_with_note">%1$s (%2$s)</string>
+    <string name="model_fallback_move_up">Chuyển lên</string>
+    <string name="model_fallback_move_down">Chuyển xuống</string>
+    <string name="model_fallback_move_up_desc">Chuyển dự phòng #%1$d lên</string>
+    <string name="model_fallback_move_down_desc">Chuyển dự phòng #%1$d xuống</string>
 </resources>
