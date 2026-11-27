@@ -42,4 +42,19 @@ class WavTest {
         assertEquals(44 + 32000, wav.size)
         assertTrue(wav.drop(44).all { it == 0.toByte() })
     }
+
+    @Test
+    fun decodeRoundTripsEncode() {
+        val pcm = shortArrayOf(0, 1, -1, 0x0102, Short.MAX_VALUE, Short.MIN_VALUE)
+        assertArrayEquals(pcm, Wav.decode(Wav.encode(pcm)))
+    }
+
+    @Test
+    fun `解码跳过 data 之前的其他块`() {
+        val wav = Wav.encode(shortArrayOf(7, -7))
+        val extra = ByteBuffer.allocate(12).order(ByteOrder.LITTLE_ENDIAN)
+            .put("LIST".toByteArray(Charsets.US_ASCII)).putInt(4).put("INFO".toByteArray(Charsets.US_ASCII)).array()
+        val withList = wav.copyOfRange(0, 36) + extra + wav.copyOfRange(36, wav.size)
+        assertArrayEquals(shortArrayOf(7, -7), Wav.decode(withList))
+    }
 }

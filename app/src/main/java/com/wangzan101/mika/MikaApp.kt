@@ -1,9 +1,11 @@
 package com.wangzan101.mika
 
 import android.app.Application
+import android.content.ComponentCallbacks2
 import android.net.Uri
 import android.util.Log
 import com.wangzan101.mika.R
+import com.wangzan101.mika.voice.ondevice.OnDeviceEngines
 import com.wangzan101.mika.cap.phone.PhoneServices
 import com.wangzan101.mika.cap.sandbox.AndroidSandbox
 import com.wangzan101.mika.cap.sandbox.AttachmentLimits
@@ -678,6 +680,17 @@ class MikaApp : Application(), WebOwner, SandboxOwner, TaskEnvironment.Owner, Ph
                 },
             ),
         )
+    }
+
+    /**
+     * 系统内存紧张时释放本机识别模型(几百 MB),下次用到再加载。界面刚退到后台(UI_HIDDEN)不算紧张:
+     * 悬浮胶囊里的语音输入还在用。
+     */
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW && level != ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN) {
+            OnDeviceEngines.shared.release()
+        }
     }
 
     override fun onCreate() {
