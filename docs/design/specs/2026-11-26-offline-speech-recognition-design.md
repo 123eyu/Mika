@@ -12,7 +12,7 @@
 - **备援链缺一个不会失败的结尾。** #880 加了语音输入备援链，但链上全是云端模型，会一起遇到断网、限流和欠费。本机模型断网能用、不限流，适合放在链的最后。
 - **隐私。** 音频不离开手机。
 
-**做成的样子**：任何一台 arm64 安卓手机，下载一个约 100–230 MB 的语音包，就能离线按住说话。这个语音包可以单独选用，也可以只当备援。
+**做成的样子**：任何一台 arm64 安卓手机，下载一个约 100–240 MB 的语音包，就能离线按住说话。这个语音包可以单独选用，也可以只当备援。
 
 ## 2. 目标、非目标、反目标
 
@@ -71,13 +71,13 @@
 
 **语音包**是一个模型的一组文件。第一版准备三个：
 
-| 包 id | 模型 | 文件（只要 int8） | 大小（约） | 推荐给哪些界面语言 | 许可 |
+| 包 id | 模型 | 文件（只要 int8） | 大小（含许可文件） | 推荐给哪些界面语言 | 许可 |
 |---|---|---|---|---|---|
-| `sensevoice-small-int8` | SenseVoice Small（FunAudioLLM / 阿里） | `model.int8.onnx`、`tokens.txt` | 230 MB | zh-Hans、zh-Hant、en、ja、ko（也能识别粤语） | FunASR Model License 1.1：可使用、复制、修改、分享，须注明出处和作者、保留模型名 |
-| `dolphin-base-ctc-int8` | Dolphin base CTC（DataoceanAI） | `model.int8.onnx`、`tokens.txt` | 105 MB | vi、id、ar、fa、tr、ru（**实现前逐语言实测，不达标的改推 Whisper**） | Apache-2.0 |
-| `whisper-base-int8` | Whisper base（OpenAI） | `base-encoder.int8.onnx`、`base-decoder.int8.onnx`、`base-tokens.txt` | 160 MB | es、pt，以及所有语言的兜底 | MIT（OpenAI whisper） |
+| `sensevoice-small-int8` | SenseVoice Small（FunAudioLLM / 阿里） | `model.int8.onnx`、`tokens.txt` | 240 MB | zh-Hans、zh-Hant、en、ja、ko（也能识别粤语） | FunASR Model License 1.1：可使用、复制、修改、分享，须注明出处和作者、保留模型名 |
+| `dolphin-base-ctc-int8` | Dolphin base CTC（DataoceanAI） | `model.int8.onnx`、`tokens.txt` | 104 MB | vi（效果有限）、fa（未实测，效果有限） | Apache-2.0 |
+| `whisper-base-int8` | Whisper base（OpenAI） | `base-encoder.int8.onnx`、`base-decoder.int8.onnx`、`base-tokens.txt` | 161 MB | id；es、pt、ru、tr、ar（效果有限）；以及所有语言的兜底 | MIT（OpenAI whisper） |
 
-上表的模型和语言对应是我的判断，依据是语言覆盖和体积。最终以 §8 的实测为准，测完再改这张表。
+上表已按 §8 的实测改过（2026-11-26）。「效果有限」指实测没达到 §7 的准确率要求，但三个包里它最好。确切的仓库、提交、文件大小和哈希见 §8。
 
 **清单**是 `app/src/main/assets/voice-models/catalog.json`，随 APK 发布，也就是信任锚。每个包包含：
 
@@ -319,6 +319,72 @@ data class InstalledVoicePack(val entry: VoicePackEntry, val dir: File) {
 2. 拿到三个包在 HuggingFace 上的确切仓库和固定提交，以及确切的文件列表和大小。
 3. 确认 sherpa-onnx v2.0.3 静态链接版 AAR 里 arm64 部分的实际体积，以及它的 Kotlin API 是否就是 `OfflineRecognizer` 加 `OfflineModelConfig`。
 4. 确认 SenseVoice 对繁体中文的输出形式（简体还是繁体）。如果需要转换，第一版先不转，在 PR 里说明。
+
+### 8.1 核实结果（2026-11-26）
+
+**怎么测的**
+- 没有真人录音。在 Mac 上用 sherpa-onnx 2.0.3 的 Python 包跑，4 线程。
+- 音频用 macOS `say` 合成，转成 16 kHz 单声道 WAV。每种语言一个系统声音。
+- 每种语言 10 句日常指令，意思相同（打开设置、给妈妈发消息说晚点到、打开蓝牙……）。
+- 中日韩按字算错误率（CER），其他语言按词算（WER）。比较前去掉标点、统一大小写；中文两边都先转成简体。
+- 「接近对」指一句话的错误不超过 20%。10 句里至少 7 句接近对，算达标。
+- **合成语音比真人说话干净，实际效果会更差。** 手机上的速度和内存不在这一步测，放到实现时的真机测试。
+
+**1. 各语言效果**（每格：错误率 / 接近对的句数；粗体是推荐的包）
+
+| 界面语言 | SenseVoice | Dolphin | Whisper base | 结论 |
+|---|---|---|---|---|
+| zh-Hans | **0.00 / 10** | 0.00 / 10 | 0.06 / 8 | 达标 |
+| zh-Hant | **0.00 / 10** | 0.00 / 10 | 0.04 / 8 | 达标，但输出是简体（见 4） |
+| en | **0.02 / 10** | 不支持 | 0.00 / 10 | 达标 |
+| ja | **0.03 / 10** | 0.10 / 9 | 0.17 / 7 | 达标 |
+| ko | **0.04 / 9** | 0.18 / 6 | 0.11 / 7 | 达标 |
+| id | 不支持 | 0.26 / 5 | **0.16 / 7** | 达标 |
+| ru | 不支持 | 0.33 / 5 | **0.21 / 6** | 效果有限 |
+| es | 不支持 | 不支持 | **0.33 / 5** | 效果有限 |
+| pt | 不支持 | 不支持 | **0.33 / 4** | 效果有限 |
+| tr | 不支持 | 不支持 | **0.32 / 4** | 效果有限 |
+| vi | 不支持 | **0.21 / 5** | 0.34 / 4 | 效果有限 |
+| ar | 不支持 | 0.73 / 1 | **0.61 / 0** | 效果有限，基本认不对 |
+| fa | — | — | — | 未实测：macOS 没有波斯语声音，三个模型仓库也没有波斯语样例音频 |
+
+- fa 推荐 Dolphin：Dolphin 官方语言表里有 fa，面向中东语言训练过。没实测，标「效果有限」。
+- Dolphin 实际不支持 en、es、pt、tr。识别这几种语言时输出是乱的，不能当它们的兜底。
+- Whisper base 的错误多是听错近音词，不是截断。
+- 作为参考，另测了 Whisper small（int8，375 MB，不在第一版里）：es 0.10 / 8、pt 0.06 / 9、ru 0.09 / 9、vi 0.11 / 7，都达标；tr 0.29 / 5、ar 0.55 / 0 仍不达标。它在 Mac 上比 base 慢约 2.7 倍，手机上 5 秒语音估计要 10 秒左右。要不要加这个包，由维护者定。
+
+**2. 仓库和文件**（全部是 sherpa-onnx 作者 csukuangfj 在 HuggingFace 上的导出，固定到下面的提交）
+
+| 包 id | 仓库 | 提交 | 文件（字节） |
+|---|---|---|---|
+| `sensevoice-small-int8` | `csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17` | `2365baeacb507f821a0c8120fcee3d484dba7a07` | `model.int8.onnx` 239,233,841；`tokens.txt` 315,894 |
+| `dolphin-base-ctc-int8` | `csukuangfj/sherpa-onnx-dolphin-base-ctc-multi-lang-int8-2025-04-02` | `1f3a53d0ecf658f8b0974e2cfde368eee40732fa` | `model.int8.onnx` 103,729,802；`tokens.txt` 504,662 |
+| `whisper-base-int8` | `csukuangfj/sherpa-onnx-whisper-base` | `bb53ee204431c90d314c1cc08d28d23e5b7927cc` | `base-encoder.int8.onnx` 29,120,534；`base-decoder.int8.onnx` 130,672,026；`base-tokens.txt` 816,730 |
+
+- 下载后逐个核对过：大模型文件和 HuggingFace 给的 LFS SHA-256 一致，小文件和 git blob 哈希一致。每个文件的 SHA-256 由发布脚本写进清单。
+- SenseVoice 还有一个 `…-int8-2025-09-09` 仓库。它是 ASLP-lab 用粤语数据微调过的版本（WSYue-ASR），不是官方通用版，不用。
+- **许可文件不在 HuggingFace 仓库里**，要从模型的原始仓库取，固定到提交：
+  - SenseVoice：`modelscope/FunASR` 的 `MODEL_LICENSE`，提交 `58830eca4012644aac0c3218c3ccc7d98f003fda`。HuggingFace 仓库里的 `LICENSE` 只有一行链接，不能当许可文件。
+  - Dolphin：`DataoceanAI/Dolphin` 的 `LICENSE`（Apache-2.0），提交 `bb70b9c0cab1235b8458141819c0ba92773d3b41`。
+  - Whisper：`openai/whisper` 的 `LICENSE`（MIT），提交 `6e3be77e1a105e59086e3e21ff5f609fd6fa89a5`。
+  - 所以许可文件在 HuggingFace 上没有备用来源。发布脚本要按文件单独记来源地址，不能都拼在 `upstream` 后面。
+
+**3. sherpa-onnx AAR**
+- v2.0.3 是目前最新的正式版（2026-11-22）。静态链接版的文件名是 `sherpa-onnx-static-link-onnxruntime-2.0.3.aar`，39,999,115 字节，SHA-256 `7744a3a8f08f017d59c2d8ed8d9b700345561f5abe9f4e06dc6eaef3a0b977b4`（和 GitHub 给的一致）。
+- arm64-v8a 只有一个 `libsherpa-onnx-jni.so`，24,914,464 字节，已去符号。压缩后约 9.3 MB。Mika 用 `useLegacyPackaging = true`，`.so` 在 APK 里是压缩的，所以 arm64 包大约增加 9–10 MB，在 §7 的 20 MB 以内。
+- AAR 里还带了 armeabi-v7a、x86、x86_64 的库（压缩后共约 30 MB），要在打包时排除，只留 arm64-v8a。
+- Kotlin API 和设计一致，包名 `com.k2fsa.sherpa.onnx`：
+  - `OfflineRecognizer(assetManager = null, config)`，用文件路径加载。配置不对时构造会抛异常。
+  - `createStream()`、`decode(stream)`、`getResult(stream).text`、`release()`。
+  - `OfflineStream.acceptWaveform(samples: FloatArray, sampleRate)`：要的是 -1 到 1 的浮点数，不是 `ShortArray`，要自己转换。
+  - `OfflineModelConfig` 里有 `senseVoice`、`whisper`、`dolphin`，以及共用的 `tokens`、`numThreads`。
+  - `senseVoice.language`：空字符串是自动，也可以是 zh、en、ja、ko、yue。`whisper.language`：空字符串是自动。`dolphin` 没有语言参数，总是自动。
+- **Whisper 要设一个流选项**：v2.0.3 默认每秒语音最多出 6 个词元，短指令会被截断。每个流在 `decode` 前调用 `setOption("max_tokens_per_second", "25")`。上面的表就是这样测的。
+- Whisper 的语言代码有两个和 ISO 不同：希伯来语是 `iw`，爪哇语是 `jw`。
+
+**4. 繁体中文**：SenseVoice 和 Dolphin 输出都是简体，10 句全是。按原计划第一版不转换，在 PR 里说明。Whisper base 指定 zh 时输出简繁混杂。
+
+**速度参考**（Mac，只作参考）：每秒语音的处理时间，SenseVoice 约 0.015 秒，Dolphin 约 0.008 秒，Whisper base 约 0.08 秒，Whisper small 约 0.23 秒。
 
 ## 9. 审阅后定下的事（设计者的判断，维护者可推翻）
 
