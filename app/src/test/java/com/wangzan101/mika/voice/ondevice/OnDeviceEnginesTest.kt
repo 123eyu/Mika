@@ -28,13 +28,18 @@ class OnDeviceEnginesTest {
         @Volatile var closed = false
         var gate: CompletableDeferred<Unit>? = null
         var failure: Throwable? = null
+        /** 关原生模型时抛出(模拟原生 close 出错)。 */
+        var closeFailure: Throwable? = null
         override suspend fun transcribe(pcm: ShortArray, language: String?): String {
             gate?.await()
             failure?.let { throw it }
             check(!closed) { "transcribe on a closed engine" }
             return "hello"
         }
-        override fun close() { closed = true }
+        override fun close() {
+            closed = true
+            closeFailure?.let { throw it }
+        }
     }
 
     private class FakeBackend(private val onLoad: () -> Unit = {}) : OnDeviceSttBackend {
@@ -188,7 +193,7 @@ class OnDeviceEnginesTest {
     }
 
     @Test
-    fun closeWhileTranscribingFailsCleanly() = runTest {
+    fun releaseWhileTranscribingKeepsTheTextAndFailsTheNextCall() = runTest {
         val backend = FakeBackend().apply { nextGate = CompletableDeferred() }
         val engines = engines(backend)
         val engine = engines.engine(pack())
@@ -197,10 +202,10 @@ class OnDeviceEnginesTest {
         engines.release()
         assertFalse("must not close under an in-flight decode", backend.loads[0].closed)
         backend.loads[0].gate!!.complete(Unit)
-        val result = call.await()
-        assertTrue(result.exceptionOrNull().toString(), result.exceptionOrNull() is OnDeviceSttException)
+        // 解码已经做完(原生对象等它结束才关):这次说的话照样拿到
+        assertEquals("hello", call.await().getOrThrow())
         assertTrue(backend.loads[0].closed)
-        // 关掉之后再用同一个句柄:也是 OnDeviceSttException
+        // 关掉之后再用同一个句柄:OnDeviceSttException
         expectKind(OnDeviceSttException.Kind.OutOfMemory) { engine.transcribe(ShortArray(1), null) }
 
         backend.nextGate = null
@@ -209,12 +214,46 @@ class OnDeviceEnginesTest {
     }
 
     @Test
-    fun decodeErrorsMapToCorruptAndKeepTheirKind() = runTest {
+    fun releaseOfOnePackWhileTranscribingKeepsTheText() = runTest {
+        val backend = FakeBackend().apply { nextGate = CompletableDeferred() }
+        val engines = engines(backend)
+        val engine = engines.engine(pack())
+        val call = async { runCatching { engine.transcribe(ShortArray(1), null) } }
+        runCurrent()
+        engines.release("p")
+        backend.loads[0].gate!!.complete(Unit)
+        assertEquals("hello", call.await().getOrThrow())
+        assertTrue(backend.loads[0].closed)
+        expectKind(OnDeviceSttException.Kind.Missing) { engine.transcribe(ShortArray(1), null) }
+    }
+
+    @Test
+    fun nativeCloseErrorsDoNotEscapeReleaseOrIdle() = runTest {
+        val backend = FakeBackend()
+        val engines = engines(backend, idleMs = 1_000)
+        engines.engine(pack("a")).transcribe(ShortArray(1), null)
+        engines.engine(pack("b")).transcribe(ShortArray(1), null)
+        backend.loads.forEach { it.closeFailure = IllegalStateException("native close failed") }
+        // 系统内存紧张时在主线程调:原生 close 出错不能往外抛
+        engines.release("a")
+        assertTrue(backend.loads[0].closed)
+        // 闲置到时在 scope 里关:出错也不能把 scope 里的异常抛出来(backgroundScope 会让测试失败)
+        advanceTimeBy(1_001)
+        runCurrent()
+        assertTrue(backend.loads[1].closed)
+        // 关过之后照常重新加载
+        assertEquals("hello", engines.engine(pack("b")).transcribe(ShortArray(1), null))
+        assertEquals(3, backend.loads.size)
+    }
+
+    @Test
+    fun decodeErrorsMapToFailedAndKeepTheirKind() = runTest {
         val backend = FakeBackend()
         val engines = engines(backend)
         val engine = engines.engine(pack())
+        // 模型已经加载成功,解码出错不是「文件损坏」:不让用户去重新下载
         backend.loads[0].failure = IllegalStateException("native decode failed")
-        expectKind(OnDeviceSttException.Kind.Corrupt) { engine.transcribe(ShortArray(1), null) }
+        expectKind(OnDeviceSttException.Kind.Failed) { engine.transcribe(ShortArray(1), null) }
         backend.loads[0].failure = OnDeviceSttException(OnDeviceSttException.Kind.Missing, "gone")
         expectKind(OnDeviceSttException.Kind.Missing) { engine.transcribe(ShortArray(1), null) }
         // 出错不拆模型,下次照常用

@@ -196,10 +196,9 @@ internal fun HeardText(stable: String, tail: String, style: androidx.compose.ui.
     }
 }
 
-/** 按住说话时界面上要的文字;不碰界面,单测直接测。 */
 /**
  * 本机识别失败给用户的那一句:原因链里是「文件损坏」([OnDeviceSttException.Kind.Corrupt])才说「语音包已损坏,请重新下载」;
- * 超时、内存不足、取消、模型被释放、清单读不了等重新下载没用,只说「离线识别失败,请重试」。
+ * 超时、内存不足、解码出错([OnDeviceSttException.Kind.Failed])、取消、模型被释放、清单读不了等重新下载没用,只说「离线识别失败,请重试」。
  */
 internal fun onDeviceFailureText(error: VoiceModelError.OnDeviceFailed): Int {
     val corrupt = generateSequence<Throwable>(error) { it.cause }.take(8)
@@ -207,6 +206,7 @@ internal fun onDeviceFailureText(error: VoiceModelError.OnDeviceFailed): Int {
     return if (corrupt) R.string.voice_pack_corrupt_error else R.string.voice_on_device_failed
 }
 
+/** 按住说话时界面上要的文字;不碰界面,单测直接测。 */
 internal object VoiceCopy {
     /** 一句说完的地方:这些标点之后断开。 */
     private val sentenceEnd = setOf('。', '！', '？', '；', '!', '?', ';', '.', '…', '\n')

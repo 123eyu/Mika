@@ -42,7 +42,11 @@ data class InstalledVoicePack(val entry: VoicePackEntry, val dir: File) {
 
 /** 本机识别的失败,按 [kind] 分类,接入语音目录时再换成 `VoiceModelError`。 */
 class OnDeviceSttException(val kind: Kind, message: String, cause: Throwable? = null) : Exception(message, cause) {
-    enum class Kind { Missing, Corrupt, OutOfMemory, Timeout, Unsupported }
+    /**
+     * [Corrupt] 只用于加载失败(文件读不出、模型建不起来),界面会让用户重新下载;
+     * [Failed] 是模型已经加载好、这一次解码出了意外,重新下载没用,只让用户重试。
+     */
+    enum class Kind { Missing, Corrupt, OutOfMemory, Timeout, Unsupported, Failed }
 }
 
 /** 后端注册表:构造时传入列表,测试换成假的。 */

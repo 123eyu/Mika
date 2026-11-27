@@ -270,7 +270,7 @@ class OnDeviceSttAdapterTest {
         fun of(kind: OnDeviceSttException.Kind) = VoiceModelError.from(OnDeviceSttException(kind, "x"), "p")
         assertTrue(of(OnDeviceSttException.Kind.Missing) is VoiceModelError.PackMissing)
         for (kind in listOf(OnDeviceSttException.Kind.Corrupt, OnDeviceSttException.Kind.OutOfMemory,
-            OnDeviceSttException.Kind.Timeout, OnDeviceSttException.Kind.Unsupported)) {
+            OnDeviceSttException.Kind.Timeout, OnDeviceSttException.Kind.Unsupported, OnDeviceSttException.Kind.Failed)) {
             val e = of(kind)
             assertTrue(e is VoiceModelError.OnDeviceFailed)
             assertEquals(VoiceErrorCategory.SYSTEM_UNAVAILABLE, e.category)

@@ -190,10 +190,10 @@ class VoicePacksViewModelTest {
         assertEquals(VoiceCopy.unavailable(SpeechEngineSpec.Why.VoicePackMissing), VoiceCopy.failure(SpeechFailure.Provider(VoiceModelError.PackMissing("x"))))
     }
 
-    /** 超时、内存不足、设备跑不了、取消、模型被释放:重新下载没用,只说请重试,也不露英文原因。 */
+    /** 超时、内存不足、设备跑不了、解码出错、取消、模型被释放:重新下载没用,只说请重试,也不露英文原因。 */
     @Test fun otherOnDeviceFailuresShowGenericRetryCopy() {
         UiText.source = ResFileTexts.chinese
-        for (kind in listOf(OnDeviceSttException.Kind.Timeout, OnDeviceSttException.Kind.OutOfMemory, OnDeviceSttException.Kind.Unsupported)) {
+        for (kind in listOf(OnDeviceSttException.Kind.Timeout, OnDeviceSttException.Kind.OutOfMemory, OnDeviceSttException.Kind.Unsupported, OnDeviceSttException.Kind.Failed)) {
             assertEquals(kind.name, "离线识别失败，请重试", onDeviceFailure(kind))
         }
         val plain = listOf(

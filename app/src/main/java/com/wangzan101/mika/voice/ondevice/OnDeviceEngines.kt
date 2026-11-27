@@ -17,7 +17,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  * 闲置 [idleMs] 或系统内存紧张([release])时释放,下次用到再加载。
  *
  * 加载在 [scope] 里跑,不跟着调用方:按下说话时 [prewarm] 开始加载,调用方取消或等超时,加载照样做完留着用。
- * 释放时正在识别的那次不会被拆掉原生对象,而是等它结束再关,它本身以 [OnDeviceSttException] 结束。
+ * 释放时正在识别的那次不会被拆掉原生对象,而是等它结束再关;那次照常拿到文字,之后再用这个句柄才报 [OnDeviceSttException]。
  * 识别本身也在 [scope] 里跑(见 [Held.transcribe]):原生解码取消不了,调用方的超时要能立刻返回。
  */
 class OnDeviceEngines(
@@ -168,7 +168,8 @@ class OnDeviceEngines(
                 }
                 throw e
             }.getOrThrow()
-            synchronized(this) { retired }?.let { throw released(it) }
+            // 解码途中被释放(删除、换版本、内存紧张)也照常交出文字:原生对象等这次解码结束才关,
+            // 后端把解码和关闭排在一起,文字是有效的;只有之后再来的识别才报已释放
             return text
         }
 
@@ -187,7 +188,8 @@ class OnDeviceEngines(
         } catch (e: OutOfMemoryError) {
             Result.failure(OnDeviceSttException(OnDeviceSttException.Kind.OutOfMemory, "out of memory transcribing with $packId", e))
         } catch (e: Throwable) {
-            Result.failure(OnDeviceSttException(OnDeviceSttException.Kind.Corrupt, "on-device model $packId failed to transcribe: ${e.message}", e))
+            // 模型已经加载成功,解码出意外不是文件损坏:报 Failed,界面只说「请重试」,不让用户重新下载
+            Result.failure(OnDeviceSttException(OnDeviceSttException.Kind.Failed, "on-device model $packId failed to transcribe: ${e.message}", e))
         }
 
         /** 一次解码真正结束(不管调用方还等不等):已释放且没有别的在跑就关原生模型,否则重新计闲置。 */
@@ -214,7 +216,8 @@ class OnDeviceEngines(
                 retired = OnDeviceSttException.Kind.OutOfMemory
                 idleJob?.cancel()
             }
-            inner.close()
+            // 在 scope 里闲置到时调用,原生 close 出错不能往外抛
+            runCatching { inner.close() }
             return true
         }
 
@@ -225,7 +228,8 @@ class OnDeviceEngines(
                 idleJob?.cancel()
                 inFlight == 0
             }
-            if (closeNow) inner.close()
+            // 可能在主线程上(onTrimMemory)调用,原生 close 出错不能往外抛
+            if (closeNow) runCatching { inner.close() }
         }
 
         /**

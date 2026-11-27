@@ -107,7 +107,8 @@ sealed class VoiceModelError(
             OnDeviceSttException.Kind.Corrupt,
             OnDeviceSttException.Kind.OutOfMemory,
             OnDeviceSttException.Kind.Timeout,
-            OnDeviceSttException.Kind.Unsupported -> OnDeviceFailed(detailOf(error), error)
+            OnDeviceSttException.Kind.Unsupported,
+            OnDeviceSttException.Kind.Failed -> OnDeviceFailed(detailOf(error), error)
         }
 
         private fun hasModelError(error: Throwable): Boolean =
