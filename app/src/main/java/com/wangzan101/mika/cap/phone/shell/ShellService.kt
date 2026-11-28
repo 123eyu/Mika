@@ -593,82 +593,13 @@ class ShellService(
      * 只有读得到用户原来的剪贴板才动它:读不到就分不清「原来是空的」和「有内容但看不到」,
      * 覆盖了就还原不回去,这时返回 [CLIP_UNREADABLE],剪贴板保持原样。
      */
-    override fun setClipText(text: String): Int = synchronized(clipLock) {
-        try {
-            // 上次还原因读不到而没完成时,先再还原一次;仍读不到就不能覆盖此刻可能属于用户的新内容。
-            if (clipSaved && !restoreClip()) return CLIP_UNREADABLE
-            if (!clipSaved) {
-                if (!canReadClipboard()) return CLIP_UNREADABLE
-                val prior = clipboard.primaryClip
-                // 读到空不一定是空:系统可能悄悄拦下了读取,这时有无、描述还会说有内容
-                when (ShellClip.read(prior != null, clipboard.hasPrimaryClip(), clipboard.primaryClipDescription != null)) {
-                    ShellClip.Read.Unreadable -> {
-                        Log.i(TAG, "setClipText: clip present but unreadable, not replacing")
-                        return CLIP_UNREADABLE
-                    }
-                    ShellClip.Read.Empty -> Log.i(TAG, "setClipText: user clipboard was empty")
-                    ShellClip.Read.Has -> Log.i(TAG, "setClipText: user clipboard saved")
-                }
-                savedClip = prior
-                clipSaved = true
-            }
-            val clip = ClipData.newPlainText(CLIP_LABEL, text)
-            suppressOverlay(clip)
-            markSensitive(clip)
-            clipboard.setPrimaryClip(clip)
-            ourText = text
-            // Android can silently decline the write. Never paste a clipboard we didn't set.
-            if (nowState(text) == ShellClip.Now.Ours) CLIP_SET else CLIP_FAILED
-        } catch (t: Throwable) {
-            Log.w(TAG, "setClipText failed", t)
-            CLIP_FAILED
-        }
-    }
+    override fun setClipText(text: String): Int = putClipText(text)
 
-    override fun restoreClip(): Boolean = synchronized(clipLock) {
-        if (!clipSaved) return true
-        val finished = runCatching {
-            val prior = savedClip
-            val now = nowState(ourText)
-            val action = ShellClip.restore(prior == null, now)
-            Log.i(TAG, "restoreClip: now=$now action=$action")
-            when (action) {
-                ShellClip.Restore.PutBack -> clipboard.setPrimaryClip(suppressOverlay(prior!!))
-                ShellClip.Restore.Clear -> clipboard.clearPrimaryClip()
-                ShellClip.Restore.Leave -> Unit
-            }
-            // 写入也可能被系统悄悄拒绝:再读一次,仍是 Mika 的或此刻读不到都保留记录,下次继续尝试。
-            // 用户已经复制了别的内容时保留用户的新内容,留底可以清掉。
-            val after = nowState(ourText)
-            after != ShellClip.Now.Ours && after != ShellClip.Now.Unreadable
-        }.onFailure { Log.w(TAG, "restoreClip failed", it) }.getOrDefault(false)
-        if (finished) {
-            savedClip = null
-            clipSaved = false
-            ourText = null
-        }
-        finished
-    }
+    override fun restoreClip(): Boolean = restoreSavedClip()
 
-    override fun savedClipText(): String? = synchronized(clipLock) {
-        if (!clipSaved) return null
-        runCatching { savedClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text?.toString() }.getOrNull().orEmpty()
-    }
+    override fun savedClipText(): String? = savedClipTextNow()
 
-    override fun restoreClipText(original: String, ours: String): Boolean = synchronized(clipLock) {
-        runCatching {
-            val now = nowState(ours)
-            val action = ShellClip.restore(original.isEmpty(), now)
-            Log.i(TAG, "restoreClipText: now=$now action=$action")
-            when (action) {
-                ShellClip.Restore.PutBack -> clipboard.setPrimaryClip(suppressOverlay(ClipData.newPlainText("", original)))
-                ShellClip.Restore.Clear -> clipboard.clearPrimaryClip()
-                ShellClip.Restore.Leave -> Unit
-            }
-            val after = nowState(ours)
-            after != ShellClip.Now.Ours && after != ShellClip.Now.Unreadable
-        }.onFailure { Log.w(TAG, "restoreClipText failed", it) }.getOrDefault(false)
-    }
+    override fun restoreClipText(original: String, ours: String): Boolean = restoreClipTextTo(original, ours)
 
     public override fun onTransact(code: Int, data: Parcel, reply: Parcel?, flags: Int): Boolean {
         // 内置助手的进程不跟着 Mika 结束,Binder 也可能被别人拿到:只有 Mika 能调用接口方法

@@ -3,6 +3,7 @@ package com.wangzan101.mika.cap.sandbox
 import android.content.Context
 import android.net.ConnectivityManager
 import android.util.Log
+import com.wangzan101.mika.cap.OutputCollector
 import com.wangzan101.mika.chat.SharedFile
 import com.wangzan101.mika.core.cap.sandbox.CommandResult
 import com.wangzan101.mika.core.workspace.GatedFile
@@ -535,7 +536,7 @@ class AndroidSandbox internal constructor(
             }
             val p = started!!
             // 读输出用普通线程:阻塞的 read 取消不了,放在协程里会让取消一直等下去
-            val collector = OutputCollector()
+            val collector = OutputCollector(ProcRunner.OUTPUT_LIMIT)
             val reader = thread(isDaemon = true, name = "mika-sandbox-output") { runCatching { p.inputStream.use(collector::drain) } }
             try {
                 // 启动期间已被取消:在这里抛出,由下面的 catch 杀掉刚起的进程
