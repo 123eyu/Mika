@@ -2,8 +2,6 @@ package com.wangzan101.mika.voice
 
 import com.wangzan101.mika.core.model.ModelError
 import java.io.IOException
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -94,13 +92,6 @@ internal fun joinAsr(parts: List<String>): String = parts.filter(String::isNotEm
     if (acc.isNotEmpty() && acc.last().isLetterOrDigit() && acc.last().code < 128 && s.first().isLetterOrDigit() && s.first().code < 128) "$acc $s" else acc + s
 }
 
-/** 小端 PCM16。 */
-internal fun pcmBytes(pcm: ShortArray, size: Int = pcm.size): ByteArray {
-    val data = ByteBuffer.allocate(size * 2).order(ByteOrder.LITTLE_ENDIAN)
-    for (i in 0 until size) data.putShort(pcm[i])
-    return data.array()
-}
-
 /** 边说边转的一次按住说话,由 [StreamingAsrSession] 跑;按住多久都行(边说边传、不攒整段录音)。 */
 internal class LiveSpeech(
     recorder: StreamingRecorder,
@@ -161,7 +152,7 @@ private class LiveAsrStream(
         throw IOException("ASR closed before final result")
     }
 
-    override fun sendAudio(pcm: ShortArray, count: Int, last: Boolean) = socket!!.sendAudio(pcmBytes(pcm, count))
+    override fun sendAudio(pcm: ShortArray, count: Int, last: Boolean) = socket!!.sendAudio(Pcm16.toBytes(pcm, count))
     override fun endAudio() { protocol.closing().forEach(socket!!::sendText) }
     override fun close() { socket?.close() }
 }
