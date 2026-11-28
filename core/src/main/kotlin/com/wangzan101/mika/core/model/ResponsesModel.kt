@@ -220,8 +220,7 @@ class ResponsesModel(
             status == 402 -> ModelError.QuotaExceeded()
             ModelHttp.contextTooLong(status, body) -> ModelError.ContextTooLong()
             status == 404 -> ModelError.ModelNotFound(model, ModelAccessErrors.jsonDetail(body))
-            status in 500..599 -> ModelError.Server(status)
-            else -> if (status >= 400) ModelError.Server(status, ModelAccessErrors.detail(body)) else ModelError.BadResponse("HTTP $status ${body.take(200)}")
+            else -> ModelHttp.fallback(status, body)
         }
 
     private companion object {
