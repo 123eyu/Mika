@@ -1,7 +1,6 @@
 package com.wangzan101.mika.cap.phone.shell
 
 import android.annotation.SuppressLint
-import android.app.ActivityOptions
 import android.app.AppOpsManager
 import android.content.ClipData
 import android.content.ComponentName
@@ -10,7 +9,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.LocalSocket
 import android.net.LocalSocketAddress
-import android.net.Uri
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
 import android.os.Binder
@@ -87,6 +85,11 @@ class ShellService(
 
     internal val taskManager: Any by lazy {
         Class.forName("android.app.ActivityTaskManager").getMethod("getService").invoke(null)!!
+    }
+
+    /** IActivityTaskManager.startActivityAsUser 的 12 参数版本;查一次留着(Binder 类的方法有上百个)。查不到时每次用都抛,调用方退回别的路。 */
+    internal val startActivityAsUser: Method by lazy {
+        taskManager.javaClass.methods.first { it.name == "startActivityAsUser" && it.parameterTypes.size == 12 }
     }
 
     override fun createDisplay(surface: Surface, width: Int, height: Int, dpi: Int): Int = try {
@@ -214,159 +217,29 @@ class ShellService(
      * 能打开它的 App 在主屏有任务就不启动:带 NEW_TASK 的链接可能落进那个任务,出现在用户眼前。
      * 只有一个 App 能打开时直接指定到那个页面,免得系统另选。
      */
-    override fun startView(displayId: Int, action: String?, uri: String?, packageName: String?): Int = synchronized(launchLock) {
-        if (!ownDisplay(displayId)) return START_ERROR
-        ShellLinks.refuse(action, uri, packageName)?.let { return it }
-        val intent = Intent(action ?: Intent.ACTION_VIEW).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        uri?.let { intent.data = Uri.parse(it) }
-        packageName?.let { intent.setPackage(it) }
-        // 网页式链接只交给声明了可从链接打开的页面,不碰 App 的内部页面
-        if (action == null) intent.addCategory(Intent.CATEGORY_BROWSABLE)
-        val candidates = activitiesFor(intent, null) ?: return START_ERROR
-        if (candidates.isEmpty()) return START_UNRESOLVED
-        try {
-            val onMain = tasksOn(Display.DEFAULT_DISPLAY).flatMap(::packagesOf).toSet()
-            if (ShellLinks.inUse(candidates.map { it.first }.distinct(), onMain)) return START_IN_USE_ON_MAIN
-            if (onOtherOwnDisplay(candidates.map { it.first }.distinct(), displayId)) return START_IN_USE_BY_OTHER
-        } catch (t: Throwable) {
-            Log.e(TAG, "cannot inspect main-screen tasks", t)
-            return START_ERROR
-        }
-        candidates.singleOrNull()?.let { (pkg, cls) -> intent.component = ComponentName(pkg, cls) }
-        val options = ActivityOptions.makeBasic().setLaunchDisplayId(displayId).toBundle()
-        val ok = try {
-            val start = taskManager.javaClass.methods.first { it.name == "startActivityAsUser" && it.parameterTypes.size == 12 }
-            val result = start.invoke(
-                taskManager, null, ShellContext.SHELL_PACKAGE, null, intent, null, null, null,
-                0, 0, null, options, USER_CURRENT,
-            ) as Int
-            if (result < 0) Log.w(TAG, "startActivityAsUser(link) -> $result")
-            result >= 0
-        } catch (t: Throwable) {
-            Log.w(TAG, "startActivityAsUser unavailable, falling back to am start", t)
-            val target = intent.component?.let { listOf("-n", it.flattenToShortString()) }
-                ?: (listOf("-a", intent.action!!) + listOfNotNull(uri?.let { "-d" }, uri) + listOfNotNull(packageName?.let { "-p" }, packageName) +
-                    (if (action == null) listOf("-c", Intent.CATEGORY_BROWSABLE) else emptyList()))
-            exec("am", "start", "--display", "$displayId", *target.toTypedArray()) == 0
-        }
-        if (ok) START_OK else START_ERROR
-    }
+    override fun startView(displayId: Int, action: String?, uri: String?, packageName: String?): Int =
+        launchView(displayId, action, uri, packageName)
 
     /**
      * 把文字分享给 [packageName]:ACTION_SEND text/plain 带 EXTRA_TEXT,只交给这个包。它没有收文字分享的页面返回 [START_UNRESOLVED];
      * 和 [startApp] 一样,用户在主屏用着它时不启动。只有一个收分享的页面时直接指定,有几个时由系统问用哪一个。
      */
-    override fun startShare(displayId: Int, packageName: String, text: String): Int = synchronized(launchLock) {
-        if (!ownDisplay(displayId)) return START_ERROR
-        val intent = ShareIntent.of(packageName, text)
-        val candidates = activitiesFor(intent, ShareIntent.TYPE) ?: return START_ERROR
-        if (candidates.isEmpty()) return START_UNRESOLVED
-        try {
-            if (inUseOnMainScreen(packageName)) return START_IN_USE_ON_MAIN
-            if (onOtherOwnDisplay(listOf(packageName), displayId)) return START_IN_USE_BY_OTHER
-        } catch (t: Throwable) {
-            Log.e(TAG, "cannot inspect main-screen tasks", t)
-            return START_ERROR
-        }
-        candidates.singleOrNull()?.let { (pkg, cls) -> intent.component = ComponentName(pkg, cls) }
-        val options = ActivityOptions.makeBasic().setLaunchDisplayId(displayId).toBundle()
-        val ok = try {
-            val start = taskManager.javaClass.methods.first { it.name == "startActivityAsUser" && it.parameterTypes.size == 12 }
-            val result = start.invoke(
-                taskManager, null, ShellContext.SHELL_PACKAGE, null, intent, ShareIntent.TYPE, null, null,
-                0, 0, null, options, USER_CURRENT,
-            ) as Int
-            if (result < 0) Log.w(TAG, "startActivityAsUser(share) -> $result")
-            result >= 0
-        } catch (t: Throwable) {
-            Log.w(TAG, "startActivityAsUser unavailable, falling back to am start", t)
-            exec(*ShareIntent.amArgs(displayId, packageName, text, intent.component?.flattenToShortString()).toTypedArray()) == 0
-        }
-        if (ok) START_OK else START_ERROR
-    }
+    override fun startShare(displayId: Int, packageName: String, text: String): Int = launchShare(displayId, packageName, text)
 
     /**
      * 把一个工作区文件分享给 [packageName]:ACTION_SEND + EXTRA_STREAM,content URI 允许对方读,只交给这个包。
      * 它没有收这类分享的页面返回 [START_UNRESOLVED];用户在主屏用着它时不启动。只打开分享页,发不发由模型在那一页上点。
      */
-    override fun startShareFile(displayId: Int, packageName: String, uri: String, mime: String, text: String): Int = synchronized(launchLock) {
-        if (!ownDisplay(displayId)) return START_ERROR
-        val target = Uri.parse(uri)
-        val intent = ShareIntent.ofFile(packageName, target, mime, text)
-        val candidates = activitiesFor(intent, mime) ?: return START_ERROR
-        if (candidates.isEmpty()) return START_UNRESOLVED
-        try {
-            if (inUseOnMainScreen(packageName)) return START_IN_USE_ON_MAIN
-            if (onOtherOwnDisplay(listOf(packageName), displayId)) return START_IN_USE_BY_OTHER
-        } catch (t: Throwable) {
-            Log.e(TAG, "cannot inspect main-screen tasks", t)
-            return START_ERROR
-        }
-        candidates.singleOrNull()?.let { (pkg, cls) -> intent.component = ComponentName(pkg, cls) }
-        val options = ActivityOptions.makeBasic().setLaunchDisplayId(displayId).toBundle()
-        val ok = try {
-            val start = taskManager.javaClass.methods.first { it.name == "startActivityAsUser" && it.parameterTypes.size == 12 }
-            val result = start.invoke(
-                taskManager, null, ShellContext.SHELL_PACKAGE, null, intent, mime, null, null,
-                0, 0, null, options, USER_CURRENT,
-            ) as Int
-            if (result < 0) Log.w(TAG, "startActivityAsUser(share file) -> $result")
-            result >= 0
-        } catch (t: Throwable) {
-            Log.w(TAG, "startActivityAsUser unavailable, falling back to am start", t)
-            exec(*ShareIntent.amArgsFile(displayId, packageName, target, mime, text, intent.component?.flattenToShortString()).toTypedArray()) == 0
-        }
-        if (ok) START_OK else START_ERROR
-    }
+    override fun startShareFile(displayId: Int, packageName: String, uri: String, mime: String, text: String): Int =
+        launchShareFile(displayId, packageName, uri, mime, text)
 
     /**
      * 系统动作(见 [SystemIntents]):只放行那几种 intent。没有页面接返回 [START_UNRESOLVED];和 [startView] 一样,
      * 接手的 App 在主屏有任务就不启动。先以 shell 身份启动;不成(接手的页面要求 shell 没有的权限,如设闹钟)时发出 Mika 做好的
      * [asMika]:以 Mika 的身份启动(权限按 Mika 查),屏和后台启动按发出的这一方(shell)查,仍落在这块屏上。
      */
-    override fun startSystemAction(displayId: Int, intent: Intent, asMika: android.app.PendingIntent?): Int = synchronized(launchLock) {
-        if (!ownDisplay(displayId)) return START_ERROR
-        // Mika 自己的兼容性自检页:以 shell 身份直接开到这块屏
-        if (intent.component?.className == SystemIntents.OWN_PAGE_CLASS) return startOwnPage(displayId, intent)
-        if (!SystemIntents.allowed(intent.action, intent.dataString)) return START_INVALID_LINK
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        val candidates = activitiesFor(intent, intent.type) ?: return START_ERROR
-        if (candidates.isEmpty()) return START_UNRESOLVED
-        try {
-            val onMain = tasksOn(Display.DEFAULT_DISPLAY).flatMap(::packagesOf).toSet()
-            if (ShellLinks.inUse(candidates.map { it.first }.distinct(), onMain)) return START_IN_USE_ON_MAIN
-            if (onOtherOwnDisplay(candidates.map { it.first }.distinct(), displayId)) return START_IN_USE_BY_OTHER
-        } catch (t: Throwable) {
-            Log.e(TAG, "cannot inspect main-screen tasks", t)
-            return START_ERROR
-        }
-        val options = ActivityOptions.makeBasic().setLaunchDisplayId(displayId)
-        val asShell = try {
-            val start = taskManager.javaClass.methods.first { it.name == "startActivityAsUser" && it.parameterTypes.size == 12 }
-            val result = start.invoke(
-                taskManager, null, ShellContext.SHELL_PACKAGE, null, intent, intent.type, null, null,
-                0, 0, null, options.toBundle(), USER_CURRENT,
-            ) as Int
-            if (result < 0) Log.w(TAG, "startActivityAsUser(${intent.action}) -> $result")
-            result >= 0
-        } catch (t: Throwable) {
-            Log.w(TAG, "startActivityAsUser(${intent.action}) refused as shell", t)
-            false
-        }
-        if (asShell) return START_OK
-        if (asMika == null) return START_ERROR
-        // 安卓 14 起 PendingIntent 的发出方要明说允许它从后台启动页面
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            options.setPendingIntentBackgroundActivityStartMode(ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
-        }
-        return try {
-            asMika.send(context, 0, null, null, null, null, options.toBundle())
-            START_OK
-        } catch (t: Throwable) {
-            Log.w(TAG, "sending ${intent.action} as Mika failed", t)
-            START_ERROR
-        }
-    }
+    override fun startSystemAction(displayId: Int, intent: Intent, asMika: android.app.PendingIntent?): Int =
+        launchSystemAction(displayId, intent, asMika)
 
     override fun displayOfTask(taskId: Int): Int = try {
         task(taskId)?.let { TASK_INFO.getField("displayId").getInt(it) } ?: -1
