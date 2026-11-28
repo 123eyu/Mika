@@ -119,7 +119,7 @@ internal class ChatLiveFollow(private val vm: ChatViewModel, private val session
         }
     }
 
-    fun onAudios(audios: List<com.wangzan101.mika.core.chat.GeneratedAudio>) {
+    fun onAudios(audios: List<com.wangzan101.mika.core.agent.GeneratedAudio>) {
         if (liveIndex < 0) return
         _ui.update { ui ->
             val exchanges = ui.exchanges.toMutableList()
@@ -137,7 +137,7 @@ internal class ChatLiveFollow(private val vm: ChatViewModel, private val session
         }
     }
 
-    fun onPhotos(photos: List<com.wangzan101.mika.core.chat.GeneratedPhoto>) {
+    fun onPhotos(photos: List<com.wangzan101.mika.core.agent.GeneratedPhoto>) {
         if (liveIndex < 0) return
         _ui.update { ui ->
             val exchanges = ui.exchanges.toMutableList()
@@ -146,7 +146,7 @@ internal class ChatLiveFollow(private val vm: ChatViewModel, private val session
         }
     }
 
-    fun onVideos(videos: List<com.wangzan101.mika.core.chat.GeneratedVideo>) {
+    fun onVideos(videos: List<com.wangzan101.mika.core.agent.GeneratedVideo>) {
         if (liveIndex < 0) return
         _ui.update { ui ->
             val exchanges = ui.exchanges.toMutableList()
