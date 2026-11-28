@@ -1,5 +1,6 @@
 package com.wangzan101.mika.core.model
 
+import com.wangzan101.mika.core.net.jsonObjectOrNull
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -94,7 +95,7 @@ object ModelHttp {
 
     /** Gemini 原生接口的错误映射。 */
     fun geminiError(status: Int, retryAfter: String?, body: String, model: String): ModelError {
-        val err = try { json.parseToJsonElement(body).jsonObject["error"] as? JsonObject } catch (e: Exception) { null }
+        val err = json.jsonObjectOrNull(body)?.get("error") as? JsonObject
         val st = (err?.get("status") as? JsonPrimitive)?.contentOrNull.orEmpty()
         val msg = (err?.get("message") as? JsonPrimitive)?.contentOrNull ?: body
         val lower = msg.lowercase()

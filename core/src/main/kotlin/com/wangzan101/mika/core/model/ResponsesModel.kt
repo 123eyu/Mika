@@ -1,5 +1,7 @@
 package com.wangzan101.mika.core.model
 
+import com.wangzan101.mika.core.net.jsonObjectOrNull
+import com.wangzan101.mika.core.net.str
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -229,7 +231,6 @@ class ResponsesModel(
     }
 }
 
-private fun JsonObject.str(k: String): String? = (this[k] as? JsonPrimitive)?.takeIf { it.isString }?.contentOrNull
 
 /**
  * 读 Responses 的事件流:`response.output_text.delta` 是逐段文字,`response.output_item.done` 是做完的一项
@@ -247,7 +248,7 @@ private class ResponsesStream(
 
     fun accept(data: String): Boolean {
         if (data == "[DONE]") return false
-        val root = try { json.parseToJsonElement(data) as? JsonObject } catch (e: Exception) { null }
+        val root = json.jsonObjectOrNull(data)
             ?: throw ModelError.BadResponse("流式响应不是合法 JSON")
         when (root.str("type")) {
             "response.output_text.delta" -> root.str("delta")?.takeIf { it.isNotEmpty() }?.let {
@@ -274,7 +275,7 @@ private class ResponsesStream(
 
     /** 服务端没按流式回、直接给了整个 response 对象。 */
     fun fromBody(text: String): ModelReply {
-        val root = try { json.parseToJsonElement(text) as? JsonObject } catch (e: Exception) { null }
+        val root = json.jsonObjectOrNull(text)
             ?: throw ModelError.BadResponse("返回内容不是合法 JSON")
         (root["error"] as? JsonObject)?.let { throw failure(it) }
         final = root
