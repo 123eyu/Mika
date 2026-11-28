@@ -1,6 +1,7 @@
 package com.wangzan101.mika.device.ui
 
 import android.app.Activity
+import android.app.KeyguardManager
 import android.content.Context
 import android.content.ContextWrapper
 import android.view.WindowManager
@@ -55,7 +56,8 @@ fun DeviceAccessSection(settings: DeviceAccessSettings, localTasks: Boolean = fa
     var repeat by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var failed by remember { mutableStateOf(false) }
-    val window = LocalContext.current.activity()?.window
+    val context = LocalContext.current
+    val window = context.activity()?.window
     DisposableEffect(editing, window) {
         val alreadySecure = window?.attributes?.flags?.and(WindowManager.LayoutParams.FLAG_SECURE) != 0
         if (editing) window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
@@ -87,15 +89,24 @@ fun DeviceAccessSection(settings: DeviceAccessSettings, localTasks: Boolean = fa
                 { on -> change({ if (localTasks) settings.setLocalEnabled(on) else settings.setEnabled(on) }) },
                 Modifier.testTag(if (localTasks) "device-access-local-enabled" else "device-access-enabled"), enabled = !busy)
         }
+        val unlockEnabled = if (localTasks) config.localEnabled else config.enabled
+        // 滑动解锁或没有锁屏的手机不用凭据也能解;只有设了安全锁屏(PIN、密码、图案)时才提醒。读不到按设了算。
+        val deviceSecure = runCatching { context.getSystemService(KeyguardManager::class.java)?.isDeviceSecure }.getOrNull() ?: true
+        val missingRequiredCredential = unlockEnabled && deviceSecure && config.kind == null && !config.blocked
         val subtitle = when {
             config.blocked -> R.string.device_access_blocked
             config.kind == CredentialKind.Pin -> R.string.device_access_pin_saved
             config.kind == CredentialKind.Password -> R.string.device_access_password_saved
+            missingRequiredCredential -> R.string.device_access_credential_required
             else -> R.string.device_access_no_credential
         }
         ListRow(
             MikaIcons.Key, stringResource(R.string.device_access_credential), stringResource(subtitle),
-            tone = if (config.blocked) TileTone.Bad else TileTone.Neutral,
+            tone = when {
+                config.blocked -> TileTone.Bad
+                missingRequiredCredential -> TileTone.Warn
+                else -> TileTone.Neutral
+            },
             onClick = { if (!busy) { kind = config.kind ?: CredentialKind.Pin; editing = true } },
             modifier = if (localTasks) Modifier.focusHighlightTarget(SettingsFocusKey.LOCK_SCREEN_CREDENTIAL) else Modifier,
         )
