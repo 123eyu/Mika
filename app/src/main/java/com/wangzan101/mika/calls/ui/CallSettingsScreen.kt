@@ -3,6 +3,7 @@ package com.wangzan101.mika.calls.ui
 import androidx.activity.compose.BackHandler
 import com.wangzan101.mika.ui.theme.LocalSkinBackdrop
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -15,6 +16,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -38,6 +40,7 @@ import com.wangzan101.mika.ui.theme.MikaIcons
 import com.wangzan101.mika.ui.theme.MikaShapes
 import com.wangzan101.mika.ui.theme.MikaSpace
 import com.wangzan101.mika.ui.theme.MikaTheme
+import com.wangzan101.mika.ui.theme.MikaType
 import com.wangzan101.mika.ui.theme.LocalMikaColors
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -530,13 +533,20 @@ internal fun CurrentCallCard(
             }
             if (state.aiActive) state.voiceStage?.let { CallVoiceStageRow(it, Modifier.padding(start = 46.dp)) }
             state.liveTranscript.lastOrNull { it.text.isNotBlank() }?.let { latest ->
-                Row(Modifier.fillMaxWidth().testTag("call-current-latest"),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    Modifier.fillMaxWidth()
+                        .clip(MikaShapes.Chip)
+                        .background(MikaTheme.colors.fill)
+                        .padding(horizontal = 10.dp, vertical = 8.dp)
+                        .testTag("call-current-latest"),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Text(stringResource(callTranscriptSpeakerLabel(latest.role)),
-                        style = MaterialTheme.typography.bodySmall, color = MikaTheme.colors.ink3,
+                        style = MaterialTheme.typography.labelMedium, color = MikaTheme.colors.ink3,
                         maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.widthIn(max = 80.dp))
-                    Text(latest.text, style = MaterialTheme.typography.bodySmall, color = MikaTheme.colors.ink2,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                    Text(latest.text, style = MaterialTheme.typography.bodySmall, color = MikaTheme.colors.ink,
+                        maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                 }
             }
             if (ringing || showTakeover || cancelAuto || state.canHangUp) {
@@ -809,7 +819,16 @@ internal fun CallFoldRow(
             Text(title, style = MaterialTheme.typography.bodyLarge)
             subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MikaTheme.colors.ink3) }
         }
-        value?.let { RowValue(it) }
+        value?.let {
+            Text(
+                it,
+                Modifier.widthIn(max = 160.dp),
+                style = MikaType.Value,
+                color = MikaTheme.colors.ink3,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
         CallExpandIcon(expanded)
     }
 }
