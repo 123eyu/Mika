@@ -6,6 +6,7 @@ import com.wangzan101.mika.core.run.record.RunMetricsStore
 import com.wangzan101.mika.core.model.usage.ConversationMeter
 import com.wangzan101.mika.core.model.usage.ConversationUsage
 import com.wangzan101.mika.core.agent.Turn
+import com.wangzan101.mika.core.workspace.AtomicFiles
 import com.wangzan101.mika.settings.ModelChoice
 import com.wangzan101.mika.settings.PersonaStore
 import com.wangzan101.mika.core.chat.GeneratedAudio
@@ -40,7 +41,6 @@ import kotlinx.serialization.json.put
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 import java.nio.file.LinkOption
 import java.util.UUID
 
@@ -98,10 +98,7 @@ class ConversationStore(
         val next = change(old)
         if (old == next) return false
         dir.mkdirs()
-        val dest = usageFile(id)
-        val tmp = File(dir, "${dest.name}.tmp")
-        tmp.writeText(usageJson.encodeToString(ConversationUsage.serializer(), next))
-        Files.move(tmp.toPath(), dest.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+        AtomicFiles.write(usageFile(id), usageJson.encodeToString(ConversationUsage.serializer(), next), durable = false)
         return true
     }
 
@@ -466,13 +463,8 @@ class ConversationStore(
             })
         }
         dir.mkdirs()
-        val tmp = File(dir, "${f.name}.tmp")
         val ok = runCatching {
-            tmp.writeText(json.toString())
-            if (!tmp.renameTo(f)) {
-                f.writeText(json.toString())
-                tmp.delete()
-            }
+            AtomicFiles.write(f, json.toString(), durable = false, move = AtomicFiles.Move.Rename, fallback = AtomicFiles.Fallback.WriteDirect)
         }.isSuccess
         if (ok) _changes.tryEmit(conversationId)
         return ok
@@ -527,17 +519,8 @@ class ConversationStore(
         }
         if (!ProjectStore.isValidId(projectId)) return false
         dir.mkdirs()
-        val tmp = File(dir, "${f.name}.tmp")
         val ok = runCatching {
-            tmp.writeText(projectId)
-            try {
-                Files.move(tmp.toPath(), f.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-            } catch (_: Exception) {
-                if (!tmp.renameTo(f)) {
-                    f.writeText(projectId)
-                    tmp.delete()
-                }
-            }
+            AtomicFiles.write(f, projectId, durable = false, move = AtomicFiles.Move.AtomicThenRename, fallback = AtomicFiles.Fallback.WriteDirect)
         }.isSuccess
         if (ok) _changes.tryEmit(conversationId)
         return ok
@@ -629,9 +612,7 @@ class ConversationStore(
                         })
                     }
                 }
-                val tmp = File(dir, "${f.name}.tmp")
-                tmp.writeText(json.toString())
-                Files.move(tmp.toPath(), f.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+                AtomicFiles.write(f, json.toString(), durable = false)
                 true
             }
         }.getOrDefault(false)
@@ -706,14 +687,9 @@ class ConversationStore(
         val json = buildJsonObject {
             put("parent", origin.parentId); put("turn", origin.parentTurn); put("after", origin.afterTurn); put("at", origin.at)
         }
-        val f = branchFile(conversationId)
-        val tmp = File(dir, "${f.name}.tmp")
         runCatching {
-            tmp.writeText(json.toString())
-            if (!tmp.renameTo(f)) {
-                f.writeText(json.toString())
-                tmp.delete()
-            }
+            AtomicFiles.write(branchFile(conversationId), json.toString(), durable = false,
+                move = AtomicFiles.Move.Rename, fallback = AtomicFiles.Fallback.WriteDirect)
         }
     }
 
@@ -736,11 +712,8 @@ class ConversationStore(
         if (safe(conversationId) in deleted) return
         val next = calls(conversationId).upsert(call)
         dir.mkdirs()
-        val dest = callsFile(conversationId)
-        val tmp = File(dir, "${dest.name}.tmp")
         val ok = runCatching {
-            tmp.writeText(callsJson.encodeToString(ListSerializer(ConversationCall.serializer()), next))
-            Files.move(tmp.toPath(), dest.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+            AtomicFiles.write(callsFile(conversationId), callsJson.encodeToString(ListSerializer(ConversationCall.serializer()), next), durable = false)
         }.isSuccess
         if (ok) _changes.tryEmit(conversationId)
     }
@@ -864,7 +837,7 @@ class ConversationStore(
         val prior = if (f.isFile) read(f) else emptyList()
         if (prior == null) {
             // 损坏的文件挪到一边留着,不拿新内容覆盖掉
-            f.renameTo(File(dir, "${f.name}.corrupt-${System.currentTimeMillis()}"))
+            AtomicFiles.quarantine(f, AtomicFiles.Quarantine.RenameCorrupt, dedupe = false)
         }
         // 新的一轮记下存进来的时刻;带时间戳的(分支复制、恢复)照原样保留
         val stored = if (turn.atMs == null) turn.copy(atMs = clock()) else turn
@@ -952,12 +925,8 @@ class ConversationStore(
             }
         })
         // 先写临时文件再改名,写到一半被杀不会留下半个文件
-        val tmp = File(dir, "${file(conversationId).name}.tmp")
-        tmp.writeText(json.toString())
-        if (!tmp.renameTo(file(conversationId))) {
-            file(conversationId).writeText(json.toString())
-            tmp.delete()
-        }
+        AtomicFiles.write(file(conversationId), json.toString(), durable = false,
+            move = AtomicFiles.Move.Rename, fallback = AtomicFiles.Fallback.WriteDirect)
         firstMessages.remove(file(conversationId).name)
         _changes.tryEmit(conversationId)
     }
