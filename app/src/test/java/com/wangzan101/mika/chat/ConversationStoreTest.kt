@@ -7,7 +7,7 @@ import com.wangzan101.mika.core.run.record.RunMetricsStore
 import com.wangzan101.mika.core.model.usage.ConversationUsage
 import com.wangzan101.mika.core.model.usage.RequestComposition
 import com.wangzan101.mika.core.agent.Turn
-import com.wangzan101.mika.core.chat.GeneratedAudio
+import com.wangzan101.mika.core.agent.GeneratedAudio
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.first
@@ -868,8 +868,8 @@ class ConversationStoreTest {
         val dir = tmp.newFolder("video")
         val store = ConversationStore(dir)
         val videos = listOf(
-            com.wangzan101.mika.core.chat.GeneratedVideo("/workspace/out/video/take.mp4", 5_000L, 1280, 720, "海边日落", 42L),
-            com.wangzan101.mika.core.chat.GeneratedVideo("/workspace/out/video/raw.mp4"),
+            com.wangzan101.mika.core.agent.GeneratedVideo("/workspace/out/video/take.mp4", 5_000L, 1280, 720, "海边日落", 42L),
+            com.wangzan101.mika.core.agent.GeneratedVideo("/workspace/out/video/raw.mp4"),
         )
         store.append("a", Turn("生成一段", "好", "succeeded", videos = videos))
         assertEquals(videos, ConversationStore(dir).turns("a").single().videos)

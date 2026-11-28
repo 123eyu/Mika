@@ -8,8 +8,8 @@ import com.wangzan101.mika.core.model.usage.ConversationUsage
 import com.wangzan101.mika.core.agent.Turn
 import com.wangzan101.mika.settings.ModelChoice
 import com.wangzan101.mika.settings.PersonaStore
-import com.wangzan101.mika.core.chat.GeneratedAudio
-import com.wangzan101.mika.core.chat.GeneratedPhoto
+import com.wangzan101.mika.core.agent.GeneratedAudio
+import com.wangzan101.mika.core.agent.GeneratedPhoto
 import com.wangzan101.mika.core.learn.memory.MemoryNote
 import com.wangzan101.mika.core.learn.memory.NoteKind
 import com.wangzan101.mika.core.learn.skills.SkillNote
@@ -842,9 +842,9 @@ class ConversationStore(
         return GeneratedPhoto(path, str(o, "width")?.toIntOrNull() ?: 0, str(o, "height")?.toIntOrNull() ?: 0, str(o, "prompt"), str(o, "atMs")?.toLongOrNull())
     }
 
-    private fun videoOf(o: JsonObject): com.wangzan101.mika.core.chat.GeneratedVideo? {
+    private fun videoOf(o: JsonObject): com.wangzan101.mika.core.agent.GeneratedVideo? {
         val path = str(o, "path") ?: return null
-        return com.wangzan101.mika.core.chat.GeneratedVideo(
+        return com.wangzan101.mika.core.agent.GeneratedVideo(
             path,
             str(o, "durationMs")?.toLongOrNull(),
             str(o, "width")?.toIntOrNull() ?: 0,

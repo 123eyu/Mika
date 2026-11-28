@@ -121,11 +121,11 @@ class ChatViewModel(
     /** 当前任务导出的文件;任务开始时由服务清空。 */
     internal val sharedFiles: StateFlow<List<SharedFile>> = MutableStateFlow(emptyList()),
     /** 当前任务生成并留在工作区里的音频;任务开始时由服务清空。 */
-    internal val generatedAudios: StateFlow<List<com.wangzan101.mika.core.chat.GeneratedAudio>> = MutableStateFlow(emptyList()),
+    internal val generatedAudios: StateFlow<List<com.wangzan101.mika.core.agent.GeneratedAudio>> = MutableStateFlow(emptyList()),
     /** 当前任务生成并留在工作区里的图;任务开始时由服务清空。 */
-    internal val generatedPhotos: StateFlow<List<com.wangzan101.mika.core.chat.GeneratedPhoto>> = MutableStateFlow(emptyList()),
+    internal val generatedPhotos: StateFlow<List<com.wangzan101.mika.core.agent.GeneratedPhoto>> = MutableStateFlow(emptyList()),
     /** 当前任务生成并留在工作区里的视频;任务开始时由服务清空。 */
-    internal val generatedVideos: StateFlow<List<com.wangzan101.mika.core.chat.GeneratedVideo>> = MutableStateFlow(emptyList()),
+    internal val generatedVideos: StateFlow<List<com.wangzan101.mika.core.agent.GeneratedVideo>> = MutableStateFlow(emptyList()),
     /** 把选中的文件(内容 URI 字符串)复制进对话工作区的 inbox/。 */
     internal val importAttachments: suspend (conversationId: String, uris: List<String>) -> ImportResult = { _, _ -> ImportResult(emptyList(), emptyList()) },
     /** 读出选中文件(内容 URI 字符串)的名字、大小和是不是照片;读盘的活由调用方放到后台线程。 */
