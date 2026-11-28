@@ -1,6 +1,5 @@
 package com.wangzan101.mika.voice.ui
 
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -42,7 +41,6 @@ import com.wangzan101.mika.ui.components.SheetAction
 import com.wangzan101.mika.ui.components.SheetTrailing
 import com.wangzan101.mika.ui.components.StatusPill
 import com.wangzan101.mika.ui.components.TagTone
-import com.wangzan101.mika.ui.components.ValueTone
 import com.wangzan101.mika.ui.theme.MikaIcons
 import com.wangzan101.mika.ui.theme.MikaTheme
 import com.wangzan101.mika.ui.theme.MikaType
@@ -408,11 +406,4 @@ fun RealtimeVoiceScreen(store: ProviderStore, onBack: () -> Unit, onOpenCalls: (
         VoiceMoreServices(onOpenServices)
         FooterNote(stringResource(R.string.realtime_footer), Modifier.padding(top = 8.dp))
     }
-}
-
-/** Status pill helper kept here so pages agree on wording. */
-@Composable
-internal fun RowScope.VoiceUsablePill(usable: Boolean) {
-    if (usable) RowValue(stringResource(R.string.voice_hub_ready), ValueTone.Ok)
-    else StatusPill(stringResource(R.string.voice_hub_setup), PillTone.Warn)
 }

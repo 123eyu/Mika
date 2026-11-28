@@ -238,7 +238,7 @@ internal object ScreenReader {
         if (!n.isEnabled) add(UiStates.DISABLED)
     }
 
-    // isChecked 在 API 36 起被三态的 checked 取代;minSdk 30 仍需用它
+    // isChecked 在 API 36 起被三态的 checked 取代;minSdk 29 仍需用它
     @Suppress("DEPRECATION")
     private fun states(n: AccessibilityNodeInfo) =
         "${n.isChecked}${n.isSelected}${n.isEnabled}${n.isFocused}${n.textSelectionStart}:${n.textSelectionEnd}"
@@ -306,10 +306,14 @@ internal object ScreenReader {
         return if (joined.length > AGGREGATE_MAX) joined.take(AGGREGATE_MAX) + "…" else joined
     }
 
+    // 每个节点都要判一次,正则只编译一回
+    private val ID_WORD = Regex("^[A-Za-z0-9_]{4,}$")
+    private val ID_LETTERS = Regex("[A-Za-z]{3}")
+
     /** `com.x:id/cart_icon` → `cart_icon`;混淆过的短名认不出用途,不给。 */
     private fun readableResourceId(id: String?): String? {
         val short = id?.substringAfterLast('/') ?: return null
-        return short.takeIf { Regex("^[A-Za-z0-9_]{4,}$").matches(it) && Regex("[A-Za-z]{3}").containsMatchIn(it) }
+        return short.takeIf { ID_WORD.matches(it) && ID_LETTERS.containsMatchIn(it) }
     }
 
     private const val FNV_OFFSET = -0x340d631b7bdddcdbL
