@@ -195,15 +195,7 @@ internal object ScreenReader {
         return cls.endsWith("RecyclerView") || cls.endsWith("ListView") || cls.endsWith("GridView")
     }
 
-    private fun inList(n: AccessibilityNodeInfo): Boolean {
-        var p = n.parent
-        var depth = 0
-        while (p != null && depth++ < MAX_DEPTH) {
-            if (isList(p)) return true
-            p = p.parent
-        }
-        return false
-    }
+    private fun inList(n: AccessibilityNodeInfo): Boolean = n.ancestors(MAX_DEPTH).any(::isList)
 
     private fun clip(rect: Rect, width: Int, height: Int) {
         if (!rect.intersect(0, 0, width, height)) rect.setEmpty()

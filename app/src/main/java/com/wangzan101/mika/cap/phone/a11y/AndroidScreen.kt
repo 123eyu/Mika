@@ -976,27 +976,13 @@ class AndroidScreen(
         return node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
     }
 
-    internal inline fun ancestorOrSelf(node: AccessibilityNodeInfo, test: (AccessibilityNodeInfo) -> Boolean): AccessibilityNodeInfo? {
-        var n: AccessibilityNodeInfo? = node
-        var depth = 0
-        while (n != null && depth <= MAX_ANCESTORS) {
-            if (test(n)) return n
-            n = n.parent
-            depth++
-        }
-        return null
-    }
+    /** [node] 自己或往上 [MAX_ANCESTORS] 层里第一个满足 [test] 的。 */
+    internal fun ancestorOrSelf(node: AccessibilityNodeInfo, test: (AccessibilityNodeInfo) -> Boolean): AccessibilityNodeInfo? =
+        node.selfAndAncestors(MAX_ANCESTORS).firstOrNull(test)
 
-    internal fun descendant(node: AccessibilityNodeInfo, test: (AccessibilityNodeInfo) -> Boolean): AccessibilityNodeInfo? {
-        val queue = ArrayDeque<AccessibilityNodeInfo>().apply { add(node) }
-        var visited = 0
-        while (queue.isNotEmpty() && visited++ < 500) {
-            val n = queue.removeFirst()
-            if (test(n)) return n
-            for (i in 0 until n.childCount) n.getChild(i)?.let(queue::add)
-        }
-        return null
-    }
+    /** [node] 自己或下面(广度优先,最多 [MAX_DESCENDANTS] 个)第一个满足 [test] 的。 */
+    internal fun descendant(node: AccessibilityNodeInfo, test: (AccessibilityNodeInfo) -> Boolean): AccessibilityNodeInfo? =
+        node.breadthFirst(MAX_DESCENDANTS).firstOrNull(test)
 
     // ---------- 画面 ----------
 
@@ -1127,6 +1113,7 @@ class AndroidScreen(
             "Tap the one the task needs (for a message, the one that sends to a contact or chat); do not share again."
         const val HINT_COLD_IGNORED = "coldIgnored: app has a task outside Mika's screen, so it was not restarted (that would wipe the user's state there). It was opened as-is; navigate back to its start screen yourself if needed."
         const val MAX_ANCESTORS = 8
+        const val MAX_DESCENDANTS = 500
 
         // 悬停、触摸探索、手势识别、无障碍焦点这些不是界面内容的变化
         const val IGNORED_EVENTS = AccessibilityEvent.TYPE_VIEW_HOVER_ENTER or AccessibilityEvent.TYPE_VIEW_HOVER_EXIT or
