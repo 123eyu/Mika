@@ -244,8 +244,10 @@ internal class ChatLiveFollow(private val vm: ChatViewModel, private val session
      * 存储里这个对话变了(别处跑完存进一轮、改了某一轮):屏上按存下的那份重排。这里跟过的那几轮按运行编号认
      * (没有编号的按原话),用这里的那份(带步骤和用时),不重复;还没存进去的接在后面;正在跟的那一问一答留在最后。
      */
-    fun syncSaved(conversationId: String) {
-        val stored = session.saved(conversationId)
+    fun syncSaved(conversationId: String) = syncSaved(conversationId, session.saved(conversationId))
+
+    /** [stored] 是这个对话存下的条目(可以先在后台读好),和屏上正在跟的合并。 */
+    fun syncSaved(conversationId: String, stored: List<Exchange>) {
         _ui.update { ui ->
             if (ui.conversationId != conversationId) return@update ui
             val live = ui.exchanges.getOrNull(liveIndex)

@@ -368,8 +368,12 @@ class ChatViewModel(
         scope.launch {
             store.changes.collect { id ->
                 if (id == _ui.value.conversationId) {
-                    live.syncSaved(id)
-                    refreshMainModel()
+                    // 任务跑着时每存一轮就来一次:整份对话 JSON 在后台读、解析,回主线程只做合并
+                    val records = kotlinx.coroutines.withContext(io) { session.savedRecords(id) }
+                    if (id == _ui.value.conversationId) {
+                        live.syncSaved(id, session.saved(records))
+                        refreshMainModel()
+                    }
                 }
                 // 删掉的对话又有人往里存了:重新列出来
                 if (id in _deleted.value && id !in deleting && store.turns(id).isNotEmpty()) _deleted.update { it - id }
