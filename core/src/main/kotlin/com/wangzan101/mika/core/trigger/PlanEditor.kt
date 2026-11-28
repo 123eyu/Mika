@@ -26,7 +26,15 @@ enum class PlanValidation {
     InvalidWeekdays,
     InvalidCooldown,
     InvalidExecutionWindow,
+    InvalidCallNumber,
 }
+
+private val CALL_NUMBER_SEPARATORS = Regex("[ ().-]")
+private val CALL_NUMBER = Regex("\\+?[0-9]{7,15}")
+
+/** 预授权号码的规范写法:去掉空格、括号、点和横线后是 7–15 位数字(可带开头的 +);不是号码时为 null。 */
+fun normalizedCallNumber(value: String): String? =
+    value.trim().replace(CALL_NUMBER_SEPARATORS, "").takeIf(CALL_NUMBER::matches)
 
 class PlanValidationException(val reason: PlanValidation) : IllegalArgumentException(reason.name)
 
@@ -49,6 +57,7 @@ data class PlanDraft(
     val executionWindow: PlanExecutionWindow = PlanExecutionWindow.Anytime,
     val windowStart: String = "22:00",
     val windowEnd: String = "02:00",
+    val preauthorizedCallNumber: String = "",
 )
 
 private val EDIT_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm")
@@ -123,6 +132,7 @@ fun TriggerDefinition.toPlanDraft(): PlanDraft {
         executionWindow = executionWindow,
         windowStart = custom?.let { formatExecutionWindowMinute(it.startMinute) } ?: "22:00",
         windowEnd = custom?.let { formatExecutionWindowMinute(it.endMinute) } ?: "02:00",
+        preauthorizedCallNumber = preauthorizedCallNumber.orEmpty(),
     )
 }
 
@@ -234,6 +244,8 @@ fun editedTrigger(
         minutes * 60_000
     } else null
     val reminderText = content.takeIf { draft.reminder }
+    val preauthorizedCallNumber = if (draft.reminder) null else draft.preauthorizedCallNumber.trim().ifEmpty { null }
+        ?.let { normalizedCallNumber(it) ?: invalid(PlanValidation.InvalidCallNumber) }
     val base = original ?: TriggerDefinition(newId, newThreadId, content, nextAt, source = source)
     val updated = base.copy(
         goal = content,
@@ -251,6 +263,7 @@ fun editedTrigger(
         cooldownMs = cooldownMs,
         executionWindowZone = execution?.first,
         executionWindows = execution?.second.orEmpty(),
+        preauthorizedCallNumber = preauthorizedCallNumber,
     )
     return if (original == null) updated else updated.withConditionHistoryFrom(original)
 }
