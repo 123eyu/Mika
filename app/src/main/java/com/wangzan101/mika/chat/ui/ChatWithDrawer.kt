@@ -351,7 +351,6 @@ fun ChatWithDrawer(
                     stored ?: ChatCopy.title(ui.exchanges),
                     if (running) ChatCopy.subtitle(last, last?.let(vm::livePlace))?.first.orEmpty() else "",
                 )
-                val canSwitch = vm.canSwitch()
                 // 搜索候选:标题换成侧栏里显示的样子(去掉附件行、网页说明),和行上看到的一致;再按归档状态筛。
                 // 有没有可搜的对话看全部,不看当前筛选——筛到空的时候搜索框和筛选条还得留着,不然退不回来
                 val searchable = remember(all, deleted) { all.any { it.id !in deleted } }
@@ -386,7 +385,7 @@ fun ChatWithDrawer(
                             val s = byId[hit.id] ?: return@mapNotNull null
                             val time = if (s.updatedAt != 0L) conversationTime(s.updatedAt, now) else ""
                             drawerEntry(
-                                s, ui.conversationId, canSwitch, running = hit.id in runningIds,
+                                s, ui.conversationId, running = hit.id in runningIds,
                                 time = time, subtitle = hit.snippet.orEmpty(), target = hit.target,
                                 projectName = s.projectId?.let(projectNames::get),
                             )
@@ -396,17 +395,17 @@ fun ChatWithDrawer(
                     )
                 }
                 // 删掉的对话当场不列,不等后台删完
-                val sections = remember(all, current, others, canSwitch, deleted, projects) {
-                    drawerSections(all.filter { it.id !in deleted }, current, others.filter { it !in deleted }, vm::runningGoal, canSwitch, System.currentTimeMillis(), projects = projects)
+                val sections = remember(all, current, others, deleted, projects) {
+                    drawerSections(all.filter { it.id !in deleted }, current, others.filter { it !in deleted }, vm::runningGoal, System.currentTimeMillis(), projects = projects)
                 }
                 // 归档视图里的行:按归档时间倒序,最近收起来的在前;副标题写清所属项目和归档了多久
-                val archivedRows = remember(all, current, canSwitch, deleted, runningIds, projectNames) {
+                val archivedRows = remember(all, current, deleted, runningIds, projectNames) {
                     val now = System.currentTimeMillis()
                     all.filter { it.id !in deleted && it.archivedAt != null }
                         .sortedByDescending { it.archivedAt }
                         .map { s ->
                             drawerEntry(
-                                s, current.id, canSwitch, running = s.id in runningIds,
+                                s, current.id, running = s.id in runningIds,
                                 time = if (s.updatedAt != 0L) conversationTime(s.updatedAt, now) else "",
                                 subtitle = s.archivedAt?.let { archivedAgo(it, now) }.orEmpty(),
                                 projectName = s.projectId?.let(projectNames::get),
@@ -424,7 +423,7 @@ fun ChatWithDrawer(
                     selected = emptySet()
                 }
                 ChatDrawer(
-                    check, sections, canSwitch,
+                    check, sections,
                     modifier = (if (permanent) Modifier else Modifier.width(drawerWidth)).onSizeChanged { drawerWidthPx = it.width }.offset {
                         val offset = drawer.currentOffset
                         val reveal = if (offset.isFinite()) (drawerWidthPx + offset).coerceIn(0f, drawerWidthPx.toFloat()) else 0f

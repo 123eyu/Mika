@@ -24,7 +24,6 @@ import com.wangzan101.mika.core.model.ChatModel
 import com.wangzan101.mika.core.model.Message
 import com.wangzan101.mika.core.model.ModelReply
 import com.wangzan101.mika.core.model.ToolSpec
-import com.wangzan101.mika.settings.FeatureFlags
 import com.wangzan101.mika.task.ScriptedModel
 import com.wangzan101.mika.task.SteerState
 import com.wangzan101.mika.task.TaskEnvironment
@@ -57,14 +56,10 @@ class SteerEditingDeviceTest {
     private val script = ScriptedModel()
     private val release = CompletableDeferred<Unit>()
     private val first = AtomicBoolean(true)
-    private var priorParallel = false
     private lateinit var conversation: String
 
     @Before fun setUp() {
         check(pollUntil(10_000) { true.takeIf { !vm.busy() && !app.taskState.busy.value } } != null)
-        val flags = FeatureFlags.get(context)
-        priorParallel = flags.speedFlags().parallelTasks
-        flags.setSpeed(flags.speedFlags().copy(parallelTasks = false))
         val model = object : ChatModel {
             override val capabilities = script.capabilities
             override suspend fun complete(system: String, messages: List<Message>, tools: List<ToolSpec>): ModelReply {
@@ -96,7 +91,6 @@ class SteerEditingDeviceTest {
         release.complete(Unit)
         if (::conversation.isInitialized) app.taskState.run(conversation)?.let { TaskService.cancel(context, it.key) }
         pollUntil(15_000) { true.takeIf { !app.taskState.busy.value && app.taskState.summarizing.value.isEmpty() } }
-        FeatureFlags.get(context).let { it.setSpeed(it.speedFlags().copy(parallelTasks = priorParallel)) }
         app.tasks.evalHooks.reset()
         app.tasks.modelFactory = TaskEnvironment.defaultModelFactory
         app.tasks.lightModelFactory = TaskEnvironment.defaultLightModelFactory

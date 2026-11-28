@@ -20,6 +20,8 @@ internal fun taskChip(origin: RunOrigin, state: TaskState, stage: TaskStage? = n
         is TaskState.WaitingTakeover -> R.string.chip_take_over
         is TaskState.Held -> when {
             state.reason.queued -> return null
+            // 等手机座位仍在干活:和运行中一样
+            state.reason.waitingSeat -> return stage?.compact ?: tr(R.string.task_running)
             state.reason == TaskGate.LOCKED -> R.string.task_wait_unlock
             state.reason.needsYou -> R.string.screens_needs_you
             else -> R.string.chat_paused

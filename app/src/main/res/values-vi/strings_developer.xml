@@ -12,8 +12,6 @@
     <string name="dev_light_sub">Mô hình nhẹ nhanh hơn xử lý các bước dễ; mô hình chính giữ các bước khó</string>
     <string name="dev_replay">Lặp lại cách đã hiệu quả lần trước</string>
     <string name="dev_replay_sub">Phát lại các tuyến đường đã lưu cho những việc đã làm trước đây; trả lại cho mô hình nếu không khớp</string>
-    <string name="dev_parallel">Chạy các cuộc trò chuyện song song</string>
-    <string name="dev_parallel_sub">Tác vụ từ các cuộc trò chuyện khác nhau mỗi tác vụ có một màn hình ảo và chạy cùng lúc</string>
     <string name="dev_compaction">Tóm tắt có cấu trúc cho tác vụ dài</string>
     <string name="dev_compaction_sub">Khi nhiều bước cần nén lại, ghi lại mục tiêu, dữ kiện, tiến độ và bước tiếp theo</string>
     <string name="dev_group">Cách Mika hoạt động</string>

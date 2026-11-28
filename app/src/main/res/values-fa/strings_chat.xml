@@ -17,7 +17,6 @@
     <string name="chat_working_on">در حال کار در %1$s</string>
     <string name="chat_working">در حال انجام</string>
     <string name="share_draft_failed">افزودن مورد اشتراک‌گذاری‌شده به گفتگوی جدید ممکن نشد</string>
-    <string name="chat_wait_previous_task">پس از پایان کار قبلی شروع می‌شود</string>
     <string name="chat_wait_unlock">در انتظار باز کردن قفل توسط شما</string>
     <string name="chat_waiting_for_you">در انتظار شما</string>
     <string name="chat_paused">متوقف موقت</string>
@@ -62,7 +61,6 @@
     <string name="memory_and_skills">حافظه و مهارت‌ها</string>
     <string name="drawer_browser">مرورگر</string>
     <string name="drawer_recent">اخیر</string>
-    <string name="drawer_busy">کاری در حال اجراست. پس از پایان آن می‌توانید گفتگو را عوض کنید.</string>
     <string name="drawer_delete_title">این گفتگو حذف شود؟</string>
     <string name="drawer_delete_body">«%1$s» و فایل‌های داخل آن حذف می‌شوند.</string>
     <string name="drawer_delete_running">کار در حال اجرای آن متوقف می‌شود.</string>

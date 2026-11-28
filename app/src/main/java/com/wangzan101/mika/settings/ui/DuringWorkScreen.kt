@@ -42,7 +42,7 @@ import com.wangzan101.mika.core.model.usage.TokenBudgetLimits
 import com.wangzan101.mika.device.ui.DeviceAccessSection
 
 /**
- * 设置 › 任务运行:自主模式默认关;屏幕常亮、被操作的 App 静音默认开,可以关;[parallel] 不为空(实验开关打开了)时多一行同时进行的任务数。
+ * 设置 › 任务运行:自主模式默认关;屏幕常亮、被操作的 App 静音默认开,可以关;[parallel] 是同时操作手机的任务数(手机座位)。
  * 下面一组是操作节奏:快 / 标准(默认) / 像人,选了下一个任务起生效。
  * [deviceAccess] 非空时挂「锁屏时运行本机任务」一组:与「连接电脑」的远程开关互不影响,凭据编辑区共用。
  * [scrollState] 由切页的一方给进来,从「操作节奏」回来才停在原来的位置。
@@ -51,7 +51,7 @@ import com.wangzan101.mika.device.ui.DeviceAccessSection
 fun DuringWorkScreen(
     keepScreenOn: Boolean, onKeepScreenOn: (Boolean) -> Unit,
     muteTarget: Boolean, onMuteTarget: (Boolean) -> Unit,
-    parallel: ParallelSetting?, onParallelMax: (Int) -> Unit, onBack: () -> Unit,
+    parallel: ParallelSetting, onParallelMax: (Int) -> Unit, onBack: () -> Unit,
     pocketGuard: Boolean = false, onPocketGuard: (Boolean) -> Unit = {},
     pocketCompletionLock: Boolean = false, onPocketCompletionLock: (Boolean) -> Unit = {},
     autonomous: Boolean = false, onAutonomous: (Boolean) -> Unit = {},
@@ -163,7 +163,7 @@ fun DuringWorkScreen(
             ) {
                 MikaSwitch(showTaskCost, onShowTaskCost, Modifier.testTag("work-show-task-cost"))
             }
-            parallel?.let { ParallelRow(it, onParallelMax, Modifier.focusHighlightTarget(SettingsFocusKey.PARALLEL_TASKS)) }
+            ParallelRow(parallel, onParallelMax, Modifier.focusHighlightTarget(SettingsFocusKey.PARALLEL_TASKS))
         }
         // 锁屏时运行本机任务:独立开关 + 共用的锁屏凭据编辑区(组名/脚注说清与远程开关互不影响)
         deviceAccess?.let { DeviceAccessSection(it, localTasks = true) }

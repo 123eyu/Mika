@@ -42,7 +42,6 @@
     <string name="chat_working_on">جارٍ العمل على %1$s</string>
     <string name="chat_working">جارٍ العمل</string>
     <string name="share_draft_failed">تعذّرت إضافة المحتوى المشارَك إلى المحادثة</string>
-    <string name="chat_wait_previous_task">سيبدأ بعد اكتمال المهمة السابقة</string>
     <string name="chat_wait_unlock">بانتظار إلغاء قفل الهاتف</string>
     <string name="chat_waiting_for_you">بانتظارك</string>
     <string name="chat_paused">متوقف مؤقتًا</string>
@@ -91,7 +90,6 @@
     <string name="memory_and_skills">الذاكرة والمهارات</string>
     <string name="drawer_browser">المتصفح</string>
     <string name="drawer_recent">الأخيرة</string>
-    <string name="drawer_busy">هناك مهمة قيد التشغيل. يمكنك التبديل بين المحادثات عند انتهائها.</string>
     <string name="drawer_delete_title">هل تريد حذف هذه المحادثة؟</string>
     <string name="drawer_delete_body">سيتم حذف «%1$s» والملفات الموجودة فيها.</string>
     <string name="drawer_delete_running">سيتم إيقاف المهمة قيد التشغيل فيها.</string>

@@ -258,18 +258,21 @@ class SettingsScreenTest {
         assertEquals(1, unpaired)
     }
 
-    /** 并行开关打开、但设备不支持时:这一行灰掉,写明原因,不给加减。 */
+    /** 任务运行页必有的「同时操作手机的任务」一行:不测它的用例给默认的 2 个座位。 */
+    private val seats get() = ParallelSetting(2, ParallelCapability.detect(34, lowRam = false, userMax = 2))
+
+    /** 设备不支持同时操作手机时:这一行灰掉,写明原因,不给加减。 */
     @Test
     fun parallelDisabledShowsReason() {
         compose.setContent {
             DuringWorkScreen(
                 keepScreenOn = true, onKeepScreenOn = {}, muteTarget = true, onMuteTarget = {},
-                parallel = ParallelSetting(2, ParallelCapability.detect(33, lowRam = false, userMax = 2, secondDisplayFailed = false)),
+                parallel = ParallelSetting(2, ParallelCapability.detect(33, lowRam = false, userMax = 2)),
                 onParallelMax = {}, onBack = {},
             )
         }
-        compose.onNodeWithText("同时进行的任务").assertIsDisplayed()
-        compose.onNodeWithText("安卓 14 以上才支持同时进行多个任务").assertIsDisplayed()
+        compose.onNodeWithText("同时操作手机的任务").assertIsDisplayed()
+        compose.onNodeWithText("同时操作手机需要安卓 14 或更新的系统").assertIsDisplayed()
         compose.onNodeWithText("1 个").assertIsDisplayed()
         compose.onNodeWithText("+").assertDoesNotExist()
     }
@@ -281,7 +284,7 @@ class SettingsScreenTest {
         compose.setContent {
             DuringWorkScreen(
                 keepScreenOn = true, onKeepScreenOn = {}, muteTarget = true, onMuteTarget = {},
-                parallel = ParallelSetting(max, ParallelCapability.detect(34, lowRam = false, userMax = max, secondDisplayFailed = false)),
+                parallel = ParallelSetting(max, ParallelCapability.detect(34, lowRam = false, userMax = max)),
                 onParallelMax = { max = it; picked += it }, onBack = {},
             )
         }
@@ -294,15 +297,6 @@ class SettingsScreenTest {
         assertEquals(listOf(3, 2), picked)
     }
 
-    @Test
-    fun duringWorkWithoutParallelHasNoParallelRow() {
-        compose.setContent {
-            DuringWorkScreen(true, {}, true, {}, parallel = null, onParallelMax = {}, onBack = {})
-        }
-        compose.onNodeWithText("被操作的 App 静音").assertIsDisplayed()
-        compose.onAllNodesWithText("同时进行的任务").assertCountEquals(0)
-    }
-
     /** 「干活时」两项默认开着,用户可以关:点了开关回调新值。 */
     @Test
     fun duringWorkTogglesCanBeTurnedOff() {
@@ -311,7 +305,7 @@ class SettingsScreenTest {
             DuringWorkScreen(
                 keepScreenOn = true, onKeepScreenOn = { changes += "screen:$it" },
                 muteTarget = true, onMuteTarget = { changes += "mute:$it" },
-                parallel = null, onParallelMax = {}, onBack = {},
+                parallel = seats, onParallelMax = {}, onBack = {},
             )
         }
         compose.onNodeWithTag("work-keep-screen-on").performClick()
@@ -324,7 +318,7 @@ class SettingsScreenTest {
     fun operatingPaceIsOneChoiceOfThree() {
         val picked = mutableListOf<OperatingPace>()
         compose.setContent {
-            DuringWorkScreen(true, {}, true, {}, parallel = null, onParallelMax = {}, onBack = {}, onOperatingPace = { picked += it })
+            DuringWorkScreen(true, {}, true, {}, parallel = seats, onParallelMax = {}, onBack = {}, onOperatingPace = { picked += it })
         }
         compose.onNodeWithText("操作节奏").assertIsDisplayed()
         compose.onNodeWithText("快").assertIsDisplayed()
@@ -382,7 +376,7 @@ class SettingsScreenTest {
         compose.onNodeWithText("全部清除").assertDoesNotExist()
     }
 
-    /** 开发者选项:八个开关分速度、实验两组,点一下打开对应那一项。 */
+    /** 开发者选项:速度、实验两组开关,点一下打开对应那一项。 */
     @Test
     fun developerOptionsHasTwoGroupsAndToggles() {
         val changed = mutableListOf<SpeedFlags>()
@@ -398,9 +392,9 @@ class SettingsScreenTest {
         scrollTo("照着上次的做法做")
         compose.onNodeWithText("照着上次的做法做").performClick()
         assertEquals(listOf(SpeedFlags(replay = true)), changed)
-        scrollTo("不同对话同时进行")
         scrollTo("长任务的摘要分条写")
         compose.onNodeWithText("长任务的摘要分条写").assertIsDisplayed()
+        compose.onAllNodesWithText("不同对话同时进行").assertCountEquals(0)
     }
 
     @Test
@@ -427,7 +421,7 @@ class SettingsScreenTest {
         compose.setContent {
             DuringWorkScreen(
                 keepScreenOn = true, onKeepScreenOn = {}, muteTarget = true, onMuteTarget = {},
-                parallel = null, onParallelMax = {}, onBack = {}, autonomous = on, onAutonomous = { toggled += it; on = it },
+                parallel = seats, onParallelMax = {}, onBack = {}, autonomous = on, onAutonomous = { toggled += it; on = it },
             )
         }
         compose.onNodeWithText(AutonomyCopy.GROUP).assertIsDisplayed()
@@ -629,7 +623,7 @@ class SettingsScreenTest {
     @Test
     fun duringWorkOmitsRedundantSubtitles() {
         compose.setContent {
-            DuringWorkScreen(true, {}, true, {}, parallel = null, onParallelMax = {}, onBack = {},
+            DuringWorkScreen(true, {}, true, {}, parallel = seats, onParallelMax = {}, onBack = {},
                 stepLimit = null, triggerRunMinutes = null, sandboxBudgetMinutes = 30, tokenBudget = null)
         }
         for (t in listOf("屏幕不熄灭", "不出声", "按人民币估算", "在小窗里点")) {

@@ -12,8 +12,6 @@
     <string name="dev_light_sub">The faster light model does easy steps; the main model keeps the hard ones</string>
     <string name="dev_replay">Repeat what worked last time</string>
     <string name="dev_replay_sub">Replays saved routes for things done before; hands back to the model if they don’t match</string>
-    <string name="dev_parallel">Run chats in parallel</string>
-    <string name="dev_parallel_sub">Tasks from different chats each get a virtual screen and run together</string>
     <string name="dev_compaction">Structured summaries for long tasks</string>
     <string name="dev_compaction_sub">When many steps need compressing, notes goal, facts, progress and next step</string>
     <string name="dev_group">How Mika works</string>

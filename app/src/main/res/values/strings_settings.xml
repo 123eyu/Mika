@@ -80,8 +80,8 @@
     <string name="settings_pace_per_app_none">No matching apps</string>
     <string name="settings_pace_per_app_pick">Pick</string>
     <string name="settings_pace_per_app_remove">Remove (follow the global pace)</string>
-    <string name="settings_parallel">Tasks at once</string>
-    <string name="settings_parallel_sub">Tasks from different chats each get their own virtual screen</string>
+    <string name="settings_parallel">Phone tasks at once</string>
+    <string name="settings_parallel_sub">Tasks that operate apps each use a virtual screen; chat and web-only tasks don\'t count</string>
     <plurals name="settings_count_tasks">
         <item quantity="one">%1$d</item>
         <item quantity="other">%1$d</item>

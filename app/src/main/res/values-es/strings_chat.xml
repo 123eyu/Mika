@@ -42,7 +42,6 @@
     <string name="chat_working_on">Trabajando en %1$s</string>
     <string name="chat_working">Trabajando</string>
     <string name="share_draft_failed">No se pudo añadir el contenido compartido a la conversación</string>
-    <string name="chat_wait_previous_task">Empieza cuando termine la tarea anterior</string>
     <string name="chat_wait_unlock">Esperando a que desbloquees</string>
     <string name="chat_waiting_for_you">Esperándote</string>
     <string name="chat_paused">En pausa</string>
@@ -88,7 +87,6 @@
     <string name="memory_and_skills">Memoria y habilidades</string>
     <string name="drawer_browser">Navegador</string>
     <string name="drawer_recent">Recientes</string>
-    <string name="drawer_busy">Hay una tarea en ejecución. Podrás cambiar de chat cuando termine.</string>
     <string name="drawer_delete_title">¿Eliminar este chat?</string>
     <string name="drawer_delete_body">Se eliminarán “%1$s” y los archivos que contiene.</string>
     <string name="drawer_delete_running">Se detendrá su tarea en ejecución.</string>

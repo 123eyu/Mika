@@ -32,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -58,14 +57,12 @@ import com.wangzan101.mika.ui.theme.MikaType
 
 /** 侧栏「项目」段头与「新建项目」入口。 */
 @Composable
-internal fun ProjectsHeader(enabled: Boolean, onNewProject: () -> Unit) {
+internal fun ProjectsHeader(onNewProject: () -> Unit) {
     val c = MikaTheme.colors
-    val busyHint = rememberBusyHint()
     Row(Modifier.fillMaxWidth().padding(end = 12.dp), verticalAlignment = Alignment.Bottom) {
         Box(Modifier.weight(1f)) { SectionLabel(stringResource(R.string.drawer_projects)) }
         Row(
-            Modifier.clip(NavShape).clickable(role = Role.Button, onClick = { if (enabled) onNewProject() else busyHint() })
-                .alpha(if (enabled) 1f else 0.4f)
+            Modifier.clip(NavShape).clickable(role = Role.Button, onClick = onNewProject)
                 .padding(start = 10.dp, end = 6.dp, top = 8.dp, bottom = 4.dp).testTag("drawer-new-project"),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -83,7 +80,6 @@ internal fun ProjectGroupHeader(
     project: Project,
     count: Int,
     collapsed: Boolean,
-    canCreate: Boolean,
     onToggle: () -> Unit,
     onNewChat: () -> Unit,
     onActions: (Rect) -> Unit,
@@ -91,7 +87,6 @@ internal fun ProjectGroupHeader(
     val c = MikaTheme.colors
     val haptic = LocalHapticFeedback.current
     val bounds = remember { mutableStateOf(Rect.Zero) }
-    val busyHint = rememberBusyHint()
     Row(
         Modifier.padding(horizontal = 12.dp).fillMaxWidth()
             .onGloballyPositioned { bounds.value = Rect(it.positionInWindow(), it.size.toSize()) }
@@ -116,9 +111,7 @@ internal fun ProjectGroupHeader(
         if (count > 0) Text("$count", style = MikaType.Hint, color = c.ink3, maxLines = 1, softWrap = false)
         Box(
             Modifier.size(26.dp).clip(CircleShape)
-                .clickable(role = Role.Button, onClickLabel = stringResource(R.string.drawer_project_new_chat),
-                    onClick = { if (canCreate) onNewChat() else busyHint() })
-                .alpha(if (canCreate) 1f else 0.4f)
+                .clickable(role = Role.Button, onClickLabel = stringResource(R.string.drawer_project_new_chat), onClick = onNewChat)
                 .testTag("project-new-chat"),
             contentAlignment = Alignment.Center,
         ) {

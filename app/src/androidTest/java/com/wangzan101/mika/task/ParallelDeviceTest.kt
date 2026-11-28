@@ -30,7 +30,7 @@ import org.junit.runner.RunWith
 import java.io.File
 
 /**
- * 真机测试:开关 parallelTasks 打开时,两个对话的任务同时跑,各占一块虚拟屏。
+ * 真机测试:两个对话的任务同时跑,各占一块虚拟屏(座位数按默认的 2 个)。
  * 需要安卓 14+、内置助手在运行、Mika 无障碍服务已开启。脚本模型按开始顺序分给两个任务。
  */
 @RunWith(AndroidJUnit4::class)
@@ -52,7 +52,6 @@ class ParallelDeviceTest {
         // 杀进程测试的第二次运行:第一次被杀时没跑收尾,开关还开着;要还原成第一次开始前记下的,不是此刻的
         priorFlags = killRecord.takeIf { it.exists() }?.let { runCatching { SpeedFlags.parse(JSONObject(it.readText()).getString(FLAGS_KEY)) }.getOrNull() }
             ?: flags.speedFlags()
-        flags.setSpeed(priorFlags.copy(parallelTasks = true))
         testTasks.modelFactory = { _, session ->
             synchronized(bySession) { bySession.getOrPut(session.id) { models[bySession.size.coerceAtMost(1)] } }
         }

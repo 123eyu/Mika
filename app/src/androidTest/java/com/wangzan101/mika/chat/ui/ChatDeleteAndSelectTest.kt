@@ -80,13 +80,13 @@ class ChatDeleteAndSelectTest {
         override fun decline(key: Int) {}
     }
 
-    private fun vm(impact: DeleteImpact = DeleteImpact(runningTask = false, schedules = 0), parallel: Boolean = false, attachments: Boolean = false) = ChatViewModel(
+    private fun vm(impact: DeleteImpact = DeleteImpact(runningTask = false, schedules = 0), attachments: Boolean = false) = ChatViewModel(
         CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
         MutableStateFlow(TaskState.Idle), MutableStateFlow(Takeover.Stage.None), actions, store,
         deletionImpact = { impact },
         removeConversation = { removed += it; store.delete(it) },
         branchTitle = { it + " · 分支" },
-        parallelFlag = { parallel }, sandboxReady = MutableStateFlow(attachments),
+        sandboxReady = MutableStateFlow(attachments),
         io = Dispatchers.Main.immediate,
     )
 
@@ -121,10 +121,10 @@ class ChatDeleteAndSelectTest {
         assertTrue(started.isEmpty())
     }
 
-    @Test fun parallelConversationSwitchRestoresTextAttachmentAndQuoteTogether() {
+    @Test fun conversationSwitchRestoresTextAttachmentAndQuoteTogether() {
         store.append("a", Turn("天气", "晴", "succeeded"))
         store.append("b", Turn("订票", "好了", "succeeded"))
-        val vm = vm(parallel = true, attachments = true)
+        val vm = vm(attachments = true)
         compose.runOnUiThread { vm.openConversation("a") }
         show(vm, drawerOpen = false)
         compose.onNodeWithTag("composer-field").performTextReplacement("下周的安排")

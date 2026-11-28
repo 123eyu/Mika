@@ -7,7 +7,6 @@ data class SpeedFlags(
     val replay: Boolean = false,
     val deepLinks: Boolean = false,
     val lightSteps: Boolean = false,
-    val parallelTasks: Boolean = false,
     /** 压缩时摘要写成结构化的四段并用真实用量校准估算(会改变模型所见,评测对比后再定)。 */
     val structuredCompaction: Boolean = false,
     /** 元素优先,只有读不清或模型主动请求时才给主模型画面。 */
@@ -16,7 +15,7 @@ data class SpeedFlags(
 ) {
     private fun on(): Map<String, Boolean> = mapOf(
         "inlineScreen" to inlineScreen, "batchSteps" to batchSteps,
-        "replay" to replay, "deepLinks" to deepLinks, "lightSteps" to lightSteps, "parallelTasks" to parallelTasks,
+        "replay" to replay, "deepLinks" to deepLinks, "lightSteps" to lightSteps,
         "structuredCompaction" to structuredCompaction,
         "adaptiveVision" to adaptiveVision, "tablesAtBirth" to tablesAtBirth,
     )
@@ -29,7 +28,7 @@ data class SpeedFlags(
         val OFF = SpeedFlags()
         private val KEYS = OFF.on().keys
         /** 已转正或撤掉的开关:存着的设置、评测参数里还可能有,读到就略过。 */
-        private val RETIRED = setOf("cacheFriendlyPrune")
+        private val RETIRED = setOf("cacheFriendlyPrune", "parallelTasks")
 
         /** "none"(或空)= 全关;否则逗号分隔的 `键=on|off` 或只写键名(= on)。未知键或值抛 [IllegalArgumentException]。 */
         fun parse(spec: String): SpeedFlags {
@@ -48,7 +47,7 @@ data class SpeedFlags(
                 }
             }
             fun f(k: String) = set[k] ?: false
-            return SpeedFlags(f("inlineScreen"), f("batchSteps"), f("replay"), f("deepLinks"), f("lightSteps"), f("parallelTasks"), f("structuredCompaction"), f("adaptiveVision"), f("tablesAtBirth"))
+            return SpeedFlags(f("inlineScreen"), f("batchSteps"), f("replay"), f("deepLinks"), f("lightSteps"), f("structuredCompaction"), f("adaptiveVision"), f("tablesAtBirth"))
         }
     }
 }

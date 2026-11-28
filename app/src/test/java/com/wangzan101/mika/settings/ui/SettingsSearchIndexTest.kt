@@ -54,14 +54,16 @@ class SettingsSearchIndexTest {
             "recovery", "recents_exclusion", "recovery_a11y", "recovery_battery", "recovery_boot", "recovery_auto_wireless",
             "self_check", "mcp_servers", "personal", "personas", "memory",
             "usage", "voice_stt", "voice_tts", "call_mode", "voice_services", "image_model", "video_model",
-            "parallel_tasks", "live_task_updates", "shizuku", "shell_transport",
+            "live_task_updates", "shizuku", "shell_transport",
         )) {
             assertFalse("$id 不该无条件出现", id in none)
         }
+        // 「同时操作手机的任务」所有版本都有
+        assertTrue("parallel_tasks" in none)
         val devOnly = SettingsSearchIndex.available(setOf(SettingsRequirement.Developer)).map { it.id }
         assertTrue("developer" in devOnly && "run_stats" in devOnly && "root" !in devOnly)
         val modelOnly = SettingsSearchIndex.available(setOf(SettingsRequirement.ModelSubPages)).map { it.id }
-        assertTrue("usage" in modelOnly && "voice_tts" in modelOnly && "parallel_tasks" !in modelOnly)
+        assertTrue("usage" in modelOnly && "voice_tts" in modelOnly && "live_task_updates" !in modelOnly)
     }
 
     /** 13 种界面语言里,每个条目都按该语言的标题和同义词找得到;不靠英文关键词。 */

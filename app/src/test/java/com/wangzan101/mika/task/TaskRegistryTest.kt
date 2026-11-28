@@ -9,6 +9,10 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
 
 class TaskRegistryTest {
     private data class Run(val conversationId: String, val goal: String) {
@@ -69,6 +73,49 @@ class TaskRegistryTest {
         val c = registry.byConversation("c")!!
         assertEquals(emptyList<Run>(), registry.onEnded(c))
         assertEquals(emptyList<Run>(), registry.queued())
+    }
+
+    // 只在聊天的任务不占座位:回锁不用等它
+    @Test fun phoneUsersIgnoreChatOnlyRuns() = runTest {
+        val a = (registry.tryStart("a", "一") as StartResult.Started).run
+        (registry.tryStart("b", "二") as StartResult.Started).run
+        registry.seats.take(a.key) {}
+        assertEquals(listOf(a), registry.phoneUsers())
+        assertEquals(emptyList<Run>(), registry.phoneUsers(ignore = a))
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test fun endingRunReleasesItsSeat() = runTest {
+        val center = TaskRegistry({ limit }, { it.conversationId }, { it.key }, seatCount = { 1 }) { c, g -> Run(c, g) }
+        val a = (center.tryStart("a", "一") as StartResult.Started).run
+        val b = (center.tryStart("b", "二") as StartResult.Started).run
+        center.seats.take(a.key) {}
+        launch { center.seats.take(b.key) {} }
+        runCurrent()
+        assertEquals(listOf(b.key), center.seats.waiting())
+        // 等座的也算用手机
+        assertEquals(listOf(a, b), center.phoneUsers())
+        center.onEnded(a)
+        runCurrent()
+        assertTrue(center.seats.holds(b.key))
+        assertEquals(emptyList<String>(), center.seats.waiting())
+    }
+
+    // 两个用手机的任务同时收尾:各自先放座位再判断回锁,后判断的那个不会因为前一个还没走完 onEnded 而等
+    @Test fun runsEndingTogetherSeeNoPhoneUsersAfterReleasingSeats() = runTest {
+        val registry = TaskRegistry({ limit }, { it.conversationId }, { it.key }, seatCount = { 2 }) { c, g -> Run(c, g) }
+        val a = (registry.tryStart("a", "一") as StartResult.Started).run
+        val b = (registry.tryStart("b", "二") as StartResult.Started).run
+        registry.seats.take(a.key) {}
+        registry.seats.take(b.key) {}
+        registry.seats.release(a.key)
+        assertEquals(listOf(b), registry.phoneUsers(ignore = a))
+        registry.seats.release(b.key)
+        assertEquals(emptyList<Run>(), registry.phoneUsers(ignore = b))
+        // onEnded 再放一次无害
+        registry.onEnded(a)
+        registry.onEnded(b)
+        assertEquals(emptyList<String>(), registry.seats.holders())
     }
 
     // 两个任务同时要开同一个 App:先占到的那个才能开,另一个拿到「别的任务在用」

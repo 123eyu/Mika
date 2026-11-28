@@ -190,7 +190,6 @@ fun SettingsScreen(
     }
     val onProblem: (Problem) -> Unit = { p -> StatusCopy.directFix(p)?.let(::fix) ?: run { explaining = p } }
 
-    // 并行任务的上限只在实验开关 parallelTasks 打开时出现;设备能力按此刻算,第二块屏建失败过就按失败算
     val context = LocalContext.current
     val recommendedTasks = remember { (context.applicationContext as com.wangzan101.mika.MikaApp).recommendedTasks }
     val savedChecklists = remember { (context.applicationContext as com.wangzan101.mika.MikaApp).savedChecklists }
@@ -230,7 +229,6 @@ fun SettingsScreen(
     var capsuleCardScale by remember { mutableStateOf(flags.capsuleCardScale()) }
     // 换语言时界面会重建,这里每次进来读一次即可
     val language = remember { AppLanguage.current(context) }
-    val runtimeLimit by (context.applicationContext as com.wangzan101.mika.MikaApp).taskState.parallelLimit.collectAsState()
     var speed by remember { mutableStateOf(flags.speedFlags()) }
     val scope = rememberCoroutineScope()
     val sandboxStatus by remember { SandboxState.get(context) }.status.collectAsState()
@@ -254,11 +252,11 @@ fun SettingsScreen(
     val mcpOn = mcpNetworkOn || mcpUsbOn
     val pluginRegistry = remember { (context.applicationContext as com.wangzan101.mika.MikaApp).plugins }
     val pluginRecords by pluginRegistry.plugins.collectAsState()
-    val parallel = if (!speed.parallelTasks) null else ParallelSetting(
+    // 同时操作手机的任务数(手机座位):所有版本都有;设备能力按此刻算
+    val parallel = ParallelSetting(
         parallelMax,
         ParallelCapability.detect(
             status.sdkInt, context.getSystemService(ActivityManager::class.java).isLowRamDevice, parallelMax,
-            secondDisplayFailed = runtimeLimit.reason == ParallelCapability.SECOND_DISPLAY_FAILED,
         ),
     )
     // 开发者选项只在调试版和性能测试版里列出:发布版的各开关按评测结果统一定默认值。
@@ -281,7 +279,6 @@ fun SettingsScreen(
         if (onOpenPersonas != null) add(SettingsRequirement.Personas)
         if (onOpenMemory != null) add(SettingsRequirement.Memory)
         if (onOpenModelRoute != null) add(SettingsRequirement.ModelSubPages)
-        if (parallel != null) add(SettingsRequirement.ParallelTasks)
         if (status.sdkInt >= 36) add(SettingsRequirement.LiveTaskUpdates)
     }
     val openSearchResult: (SettingsDestination) -> Unit = { d ->

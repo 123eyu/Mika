@@ -130,6 +130,8 @@ data class Exchange(
     val notes: Map<Int, String> = emptyMap(),
     /** 此刻在做什么:模型这一步的话,或不经模型连做几步时的进度;没有时为空。 */
     val line: String = "",
+    /** 在等手机座位时占着手机的那个对话([line] 写的是等它);点那一行打开它。不在等座位或不知道是谁时为 null。 */
+    val seatHolder: String? = null,
     /** 任务进行中用户在这里插的话和它们的去向。 */
     val steers: List<SteerNote> = emptyList(),
     /** 这一轮结束后留在后台运行的那一页的站点(见 [Turn.keptPage]);没留为 null。 */

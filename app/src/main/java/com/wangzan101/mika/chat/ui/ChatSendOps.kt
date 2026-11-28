@@ -1,6 +1,4 @@
 package com.wangzan101.mika.chat.ui
-import com.wangzan101.mika.R
-import com.wangzan101.mika.i18n.tr
 import com.wangzan101.mika.chat.RetryAttachmentStatus
 import com.wangzan101.mika.chat.CurrentChat
 import com.wangzan101.mika.cap.sandbox.ImportResult
@@ -13,7 +11,6 @@ import com.wangzan101.mika.task.SteerState
 import com.wangzan101.mika.task.unconsumed
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -28,13 +25,11 @@ internal class ChatSendOps(private val vm: ChatViewModel, private val session: C
     private val _deleted = session._deleted
     private var liveIndex by session::liveIndex
     private var lingerJob by session::lingerJob
-    private var pendingStart by session::pendingStart
     private var screenSeen by session::screenSeen
     private var pipClosed by session::pipClosed
     private val scope = vm.scope
     private val actions = vm.actions
     private val store = vm.store
-    private val serviceBusy = vm.serviceBusy
     private val activeConversations = vm.activeConversations
     private val importAttachments = vm.importAttachments
     private val clock = vm.clock
@@ -72,7 +67,6 @@ internal class ChatSendOps(private val vm: ChatViewModel, private val session: C
             onTeachingBlocked()
             return false
         }
-        session.refreshParallel()
         val ui = _ui.value
         if (ui.importing) return false
         val routed = route(text.trim(), ui, check)
@@ -99,7 +93,7 @@ internal class ChatSendOps(private val vm: ChatViewModel, private val session: C
         if (words.isNotEmpty() && ui.conversationId?.let { vm.ownerAnswer(it, goal) } == true) return Routed.Sent
         // 任务在等回答:这句就是回答
         if (words.isNotEmpty() && ui.composer == ComposerMode.Answer) {
-            act({ actions.answer(goal) }) { actions.answerIn(it, goal) }
+            act { actions.answerIn(it, goal) }
             return Routed.Sent
         }
         // 只有「没主模型」可以由本对话的有效选择补足；其余前置条件原样保留。
@@ -136,10 +130,9 @@ internal class ChatSendOps(private val vm: ChatViewModel, private val session: C
 
     /**
      * 插话给这条会话正在跑的任务:挂在进行中的那一问下面(先显示「待送达」),交给服务。
-     * 任务还在等前一件让出服务(还没真正开始)时不发,话留在输入框里。
      */
     private fun steer(id: String, text: String): Boolean {
-        if (liveIndex !in _ui.value.exchanges.indices || pendingStart?.isActive == true) return false
+        if (liveIndex !in _ui.value.exchanges.indices) return false
         val note = SteerNote(java.util.UUID.randomUUID().toString(), text, SteerState.Pending)
         _ui.update { ui ->
             if (liveIndex !in ui.exchanges.indices) return@update ui
@@ -278,7 +271,7 @@ internal class ChatSendOps(private val vm: ChatViewModel, private val session: C
     private fun deskTitle(text: String, items: List<PendingAttachment>): String =
         QuoteMessage.words(text).trim().ifBlank { items.joinToString("、") { it.name } }
 
-    /** 在对话 [id] 里开始新任务 [goal]:界面上加一问一答,交给服务(并行关着、服务还忙时排在它收尾后面)。 */
+    /** 在对话 [id] 里开始新任务 [goal]:界面上加一问一答,交给服务。 */
     private fun begin(goal: String, id: String, clearDraftAttachments: Boolean = true) {
         lingerJob?.cancel()
         // 真正开始任务后,草稿附件已在工作区,可以清掉私有暂存副本。
@@ -303,24 +296,8 @@ internal class ChatSendOps(private val vm: ChatViewModel, private val session: C
                 queued = it.queued.filterNot { q -> q.text == goal },
             )
         }
-        // 并行时服务忙着(别的对话的任务在跑)也直接交给它
-        if (serviceBusy.value && !session.parallel()) {
-            // 等着的这段时间说清楚在等什么,不让它看着像卡住了;交给服务后由任务自己的状态接着写
-            _ui.update { ui ->
-                val exchanges = ui.exchanges.toMutableList()
-                exchanges[liveIndex] = exchanges[liveIndex].copy(line = tr(R.string.chat_wait_previous_task))
-                ui.copy(exchanges = exchanges)
-            }
-            // 交过去时别处(定时、电脑)可能刚好先开始了一个:服务把它排在那个后面,不丢
-            pendingStart = scope.launch {
-                serviceBusy.first { !it }
-                pendingStart = null
-                actions.start(goal, id)
-                // 排队项早已持久化;原话任务收尾时服务按 FIFO 取出,不在这里重写或抢跑
-            }
-        } else {
-            actions.start(goal, id)
-        }
+        // 服务忙着(别的对话的任务在跑)也直接交给它
+        actions.start(goal, id)
     }
 
     /** 当前没有任务在跑时,把排队的第一件开始(排队条上的「现在开始」)。 */
@@ -384,48 +361,28 @@ internal class ChatSendOps(private val vm: ChatViewModel, private val session: C
             }
             ui.copy(exchanges = exchanges)
         }
-        val pending = pendingStart
-        if (pending == null || !pending.isActive) {
-            // 这个对话在服务里有任务(在跑或排着队)就只停它:不带编号的停止按服务显示中的任务算,
-            // 这条还排在别处开始的任务后面时,停掉的会是那个任务
-            val id = _ui.value.conversationId
-            if (id != null && id in activeConversations.value) actions.cancelIn(id) else act({ actions.cancel() }) { actions.cancelIn(it) }
-            return
-        }
-        // 任务还没交给服务:作废这次开始;服务里正在收尾的是上一个任务,不去碰它
-        pending.cancel()
-        pendingStart = null
-        _ui.update { ui ->
-            val exchanges = ui.exchanges.toMutableList()
-            if (liveIndex in exchanges.indices) exchanges[liveIndex] = exchanges[liveIndex].copy(status = ExchangeStatus.Cancelled())
-            // 明确排队的下一件有独立持久生命周期,取消原话开始也不删它。
-            ui.copy(exchanges = exchanges, pip = PipUi(), composer = ComposerMode.Idle)
-        }
-        liveIndex = -1
+        // 这个对话在服务里有任务(在跑或排着队)就只停它;没有就不发
+        act { actions.cancelIn(it) }
     }
 
-    fun resume() = act({ actions.resume() }) { actions.resumeIn(it) }
+    fun resume() = act { actions.resumeIn(it) }
 
-    fun takeOver() = act({ actions.takeOver() }) { actions.takeOverIn(it) }
+    fun takeOver() = act { actions.takeOverIn(it) }
 
-    fun handBack() = act({ actions.handBack() }) { actions.handBackIn(it) }
+    fun handBack() = act { actions.handBackIn(it) }
 
-    fun finishedMyself() = act({ actions.finishedMyself() }) { actions.finishedMyselfIn(it) }
+    fun finishedMyself() = act { actions.finishedMyselfIn(it) }
 
-    fun skip() = act({ actions.skip() }) { actions.skipIn(it) }
+    fun skip() = act { actions.skipIn(it) }
 
-    fun answer(text: String) = act({ actions.answer(text) }) { actions.answerIn(it, text) }
+    fun answer(text: String) = act { actions.answerIn(it, text) }
 
-    fun approve(key: Int) = act({ actions.approve(key) }) { actions.approveIn(it, key) }
+    fun approve(key: Int) = act { actions.approveIn(it, key) }
 
-    fun decline(key: Int) = act({ actions.decline(key) }) { actions.declineIn(it, key) }
+    fun decline(key: Int) = act { actions.declineIn(it, key) }
 
-    /**
-     * 应用内的按钮:开关关着时作用于服务显示中的任务(M1);并行时带上按下那一刻屏上的对话,只作用于它的任务,
-     * 这个对话没有任务就不发。
-     */
-    private inline fun act(serial: () -> Unit, scoped: (String) -> Unit) {
-        if (!session.parallel()) return serial()
+    /** 应用内的按钮:带上按下那一刻屏上的对话,只作用于它的任务,这个对话没有任务就不发。 */
+    private inline fun act(scoped: (String) -> Unit) {
         val id = _ui.value.conversationId ?: return
         if (id in activeConversations.value) scoped(id)
     }
@@ -454,16 +411,5 @@ internal class ChatSendOps(private val vm: ChatViewModel, private val session: C
     fun togglePipSound() {
         val id = _ui.value.conversationId ?: return
         actions.togglePipSoundIn(id)
-    }
-
-    /** 分享切走前,把仍在等串行服务空闲的原任务交给服务排队;只取消界面里的等待协程,不取消任务。 */
-    fun handOffPendingStart() {
-        val pending = pendingStart?.takeIf { it.isActive } ?: return
-        val id = _ui.value.conversationId
-        val live = _ui.value.exchanges.getOrNull(liveIndex)
-        pendingStart = null
-        pending.cancel()
-        if (id == null || live == null) return
-        actions.start(live.goal, id)
     }
 }

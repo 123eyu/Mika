@@ -228,14 +228,11 @@ internal fun NavEntry(
 
 /** 侧栏搜索框右边的新对话按钮:中性圆底 + 深色加号,和顶栏 ✚ 一个样子。 */
 @Composable
-internal fun NewConversationButton(enabled: Boolean, onClick: () -> Unit) {
+internal fun NewConversationButton(onClick: () -> Unit) {
     val c = MikaTheme.colors
-    val busyHint = rememberBusyHint()
     Box(
         Modifier.size(38.dp).clip(CircleShape).background(c.fill)
-            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.chat_new),
-                onClick = { if (enabled) onClick() else busyHint() })
-            .alpha(if (enabled) 1f else 0.4f),
+            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.chat_new), onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Icon(MikaIcons.New, stringResource(R.string.chat_new), Modifier.size(18.dp), tint = c.ink)

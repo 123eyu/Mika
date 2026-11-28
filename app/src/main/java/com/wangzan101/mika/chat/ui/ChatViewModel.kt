@@ -75,11 +75,6 @@ class ChatViewModel(
     internal val takeoverStage: StateFlow<Takeover.Stage>,
     internal val actions: TaskActions,
     internal val store: ConversationStore,
-    /**
-     * 服务还有任务(这个对话上一个任务还在收尾,或别处开始的任务在跑);并行关着时新任务等它收完再交给服务,
-     * 免得这个对话的新一句被当成上一个任务的插话。等着时那条消息下面写「等前一个任务做完再开始」。
-     */
-    internal val serviceBusy: StateFlow<Boolean> = MutableStateFlow(false),
     /** 包名换成 App 显示名(确认卡片用)。 */
     internal val appLabel: (String) -> String = { it },
     /**
@@ -99,9 +94,7 @@ class ChatViewModel(
     internal val liveRunId: (conversationId: String) -> String? = { null },
     /** 每个对话最近结束的任务的运行记录编号;给了就按卡片所在的对话取,不用上面那个(它只跟显示中的任务)。 */
     internal val endedRunIds: StateFlow<Map<String, String?>>? = null,
-    /** 开关 parallelTasks:打开时不同对话的任务可以同时跑,界面只跟着屏上这个对话的任务。界面没在跟任务时重读。 */
-    internal val parallelFlag: () -> Boolean = { false },
-    /** 服务显示中的任务:(对话, 状态),两者一起写;并行时用它代替 [taskState],别的对话的状态不进来。 */
+    /** 服务显示中的任务:(对话, 状态),两者一起写;界面按它带的对话认状态,别的对话的状态不进来。 */
     internal val shownTask: StateFlow<Pair<String, TaskState>?> = MutableStateFlow(null),
     /** 正在跑或排队的任务所在的对话。 */
     internal val activeConversations: StateFlow<List<String>> = MutableStateFlow(emptyList()),
@@ -351,9 +344,7 @@ class ChatViewModel(
     }.stateIn(scope, SharingStarted.Eagerly, emptyList())
 
     init {
-        // 开关关着时也按状态带的对话认:别的对话的任务(悬浮胶囊、定时任务开始的)不接到屏上这个对话里
-        scope.launch { taskState.collect { s -> if (!session.parallel()) shownTask.value?.let { live.onShown(it.first, s) } ?: live.onState(s) } }
-        scope.launch { shownTask.collect { t -> if (t != null && session.parallel()) live.onShown(t.first, t.second) } }
+        scope.launch { shownTask.collect { t -> if (t != null) live.onShown(t.first, t.second) } }
         // 排队条:只显示当前对话、明确排队、还没被服务取走的项;fallback 由穿插话那行 SteerState.Next 表示。
         // 和整个 ChatUi 组合(不只是 conversationId):换对话/重建 ChatUi 时即使编号没变,也要把队列补回去。
         scope.launch {
@@ -422,9 +413,6 @@ class ChatViewModel(
 
     /** 该对话正在跑的任务的原话;侧栏「进行中」里还没存进对话列表的那条用它当标题。 */
     fun runningGoal(conversationId: String): String? = runGoal(conversationId)
-
-    /** 能不能换到别的对话:并行时随时能换,否则要等这个对话的任务结束。 */
-    fun canSwitch() = session.parallel() || !session.busy()
 
     // ChatSession
     fun busy() = session.busy()

@@ -2,7 +2,6 @@ package com.wangzan101.mika.task
 
 import com.wangzan101.mika.MikaApp
 import com.wangzan101.mika.i18n.tr
-import android.app.ActivityManager
 import android.os.Build
 import com.wangzan101.mika.R
 import com.wangzan101.mika.chat.ConversationStore
@@ -17,7 +16,6 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 import com.wangzan101.mika.task.TaskService.Companion.nextResultId
 import com.wangzan101.mika.task.TaskService.Companion.notifyDelivery
-import com.wangzan101.mika.task.TaskService.Companion.ID_RESULT
 import com.wangzan101.mika.task.TaskService.Companion.start
 
 // 任务服务:并发名额、追问排队与渠道回执
@@ -27,7 +25,7 @@ internal fun TaskService.localDeliveryChannel(scheduled: Boolean) = LocalChannel
         SendOutcome.Delivered
     } else {
         val run = center.byConversation(delivery.threadId)
-        val resultId = if (delivery is Delivery.Result && run?.parallel == false) ID_RESULT else nextResultId()
+        val resultId = nextResultId()
         val own = delivery !is Delivery.Result ||
             ownResultNotice(delivery, run?.key, run?.state?.value ?: TaskState.Idle, (application as MikaApp).deskReportsEnding)
         notifyDelivery(this, delivery, resultId, scheduled, ownResult = own)
@@ -46,12 +44,19 @@ internal fun ownResultNotice(
     deskReportsEnding: (runKey: String, end: TaskState) -> Boolean,
 ): Boolean = delivery.restored || runKey == null || !deskReportsEnding(runKey, end)
 
-internal fun TaskService.limit(): ParallelLimit {
-    if (!parallel) return ParallelLimit(1, null)
-    val lowRam = getSystemService(ActivityManager::class.java).isLowRamDevice
-    return ParallelCapability.detect(Build.VERSION.SDK_INT, lowRam, FeatureFlags.get(this).parallelMax(), taskState.secondDisplayFailed)
-        .also { taskState._parallelLimit.value = it }
-}
+/**
+ * 任务总数上限:宽的常量(见 [TaskCapacity]),同时操作手机的任务数由 [seatLimit] 管。
+ * 每次决定开始还是排队时发布到 [TaskCenterState.parallelLimit],前台按同一个数预判。
+ */
+internal fun TaskService.limit(): ParallelLimit =
+    ParallelLimit(TaskCapacity.max(lowRam), null).also { taskState._parallelLimit.value = it }
+
+/**
+ * 手机座位数。在座位和登记处的锁里调用:只读内存里的设置和开服务时记下的 [TaskService.lowRam],
+ * 不做阻塞读写、不拿别的锁。
+ */
+internal fun TaskService.seatLimit(): ParallelLimit =
+    ParallelCapability.detect(Build.VERSION.SDK_INT, lowRam, FeatureFlags.get(this).parallelMax())
 
 /** 登记处里没人用的最小槽位;只在登记处的锁内调用。 */
 internal fun TaskService.freeSlot(): Int {

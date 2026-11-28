@@ -12,8 +12,6 @@
     <string name="dev_light_sub">더 빠른 경량 모델이 쉬운 단계를 처리하고, 어려운 단계는 메인 모델이 맡아요</string>
     <string name="dev_replay">지난번에 통했던 방법 반복</string>
     <string name="dev_replay_sub">전에 해 본 일은 저장한 경로로 재생하고, 맞지 않으면 모델에 다시 넘겨요</string>
-    <string name="dev_parallel">채팅 동시에 실행</string>
-    <string name="dev_parallel_sub">서로 다른 채팅의 작업이 각각 가상 화면을 받아 함께 실행돼요</string>
     <string name="dev_compaction">긴 작업을 구조화해 요약</string>
     <string name="dev_compaction_sub">단계가 많아 압축해야 할 때 목표, 사실, 진행 상황, 다음 단계를 정리해요</string>
     <string name="dev_group">Mika가 일하는 방식</string>

@@ -3,9 +3,8 @@
     <string name="notif_channel_prepare">Thiết lập nền</string>
     <string name="notif_preparing">Mika đang chuẩn bị</string>
     <string name="notif_result_title">Kết quả tác vụ của Mika</string>
-    <string name="parallel_second_display_failed">Không tạo được màn hình ảo thứ hai, nên hiện tại mỗi lần chỉ chạy một tác vụ</string>
-    <string name="parallel_needs_14">Chạy nhiều tác vụ cùng lúc cần Android 14 trở lên</string>
-    <string name="parallel_low_ram">Điện thoại này có ít bộ nhớ, nên mỗi lần chỉ chạy một tác vụ</string>
+    <string name="parallel_needs_14">Thao tác điện thoại cho nhiều tác vụ cùng lúc cần Android 14 trở lên</string>
+    <string name="parallel_low_ram">Điện thoại này có ít bộ nhớ, nên mỗi lần chỉ thao tác một ứng dụng</string>
     <string name="skill_suspended">Kỹ năng này gần đây không hoạt động tốt, nên đã bị tạm dừng: %1$s</string>
     <string name="skill_verified">Kỹ năng đã hoạt động, nay được dùng thường xuyên: %1$s</string>
     <string name="skill_learned">Mika đã học một kỹ năng: %1$s</string>
@@ -30,6 +29,8 @@
     <string name="fail_model_untested">Mô hình chính chưa qua kiểm tra trên %1$s. Vào Cài đặt › Mô hình › %1$s và nhấn “Kiểm tra lại” để kiểm tra nó.</string>
     <string name="fail_no_web">Web không khả dụng trên thiết bị này, nên việc kiểm tra điều kiện không thể chạy</string>
     <string name="task_waiting_display">Đang xếp hàng: bắt đầu sau khi tác vụ khác hoàn thành</string>
+    <string name="task_waiting_seat">Đang chờ “%1$s” dùng xong điện thoại</string>
+    <string name="task_waiting_seat_other">Đang chờ một tác vụ khác dùng xong điện thoại</string>
     <string name="task_no_phone_helper">Điều khiển điện thoại chưa sẵn sàng. Hoàn thành “Thiết lập điều khiển điện thoại” trong Mika. Các tác vụ web và tệp không bị ảnh hưởng.</string>
     <string name="task_no_a11y">Dịch vụ hỗ trợ tiếp cận của Mika đang tắt. Bật Mika trong mục Hỗ trợ tiếp cận trong cài đặt hệ thống.</string>
     <string name="task_a11y_not_running">Dịch vụ hỗ trợ tiếp cận của Mika đã được bật, nhưng Android chưa kết nối nó. Tắt rồi bật lại Mika trong mục Hỗ trợ tiếp cận trong cài đặt hệ thống. Nếu Android chặn nó, hãy cho phép cài đặt bị hạn chế trong thông tin ứng dụng của Mika trước.</string>

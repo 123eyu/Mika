@@ -22,6 +22,7 @@ import com.wangzan101.mika.cap.phone.a11y.PhoneUnavailable
 import com.wangzan101.mika.cap.phone.a11y.launchableApps
 import com.wangzan101.mika.task.ConfirmationNotifier
 import com.wangzan101.mika.MikaApp
+import com.wangzan101.mika.chat.ConversationStore
 import com.wangzan101.mika.core.agent.GateReason
 import com.wangzan101.mika.core.agent.TaskState
 import com.wangzan101.mika.core.device.access.AppAccessDenied
@@ -97,6 +98,25 @@ internal suspend fun TaskRun.assemblePhone(a: RunAssembly): RunPhone {
     return RunPhone(appAccess, metrics, pace, shellUp, states, phoneScreen, accessedPhone, privatePhone)
 }
 
+/**
+ * 第一次接手机前取一个手机座位(座位一直留到任务收尾,由 [TaskCenter] 收尾时放)。
+ * 没座位时停在「等「对话」用完手机」,点了跳到占着第一个座位的那个对话;取到后放回等之前那一句。
+ * 等的话可能在取到之后才发出来(先来先等,和放座位抢),所以只在状态仍是自己发的那句时才放回。
+ */
+private suspend fun TaskRun.takePhoneSeat() {
+    val before = runState._state.value
+    var waiting: TaskState? = null
+    service.center.seats.take(key) { holders ->
+        val holderConv = holders.firstOrNull()?.let { service.center.byKey(it) }?.conversationId
+        val title = holderConv?.let { ConversationStore.shared(service).title(it) }
+        val held = TaskState.Held(GateReason.waitingSeat(seatWaitCopy(title), holderConv))
+        waiting = held
+        publish(held)
+    }
+    // 被取消、暂停打断时不放回:收尾或暂停自己会发状态
+    if (waiting != null && runState._state.value == waiting) publish(before)
+}
+
 /** 接上手机:连内置助手、等无障碍、备好(到第一次 launch_app 才建的)虚拟屏;缺一样就报 phone_unavailable。 */
 internal suspend fun TaskRun.connectPhone(a: RunAssembly, appAccess: com.wangzan101.mika.settings.AppAccessStore, metrics: DisplayMetrics, pace: AppPacePlan, shellUp: MutableStateFlow<Boolean>, states: DeviceStateWatcher): AndroidScreen {
     var connection by a::connection
@@ -108,6 +128,7 @@ internal suspend fun TaskRun.connectPhone(a: RunAssembly, appAccess: com.wangzan
     val side = a.side
     // 版本要求只属于手机操作;旧系统仍可聊天、使用网页和沙箱,也不应被引导去配对不支持的助手。
     if (Build.VERSION.SDK_INT < Prerequisites.MIN_SDK) throw PhoneUnavailable(TaskService.TOO_OLD)
+    takePhoneSeat()
     val conn = connection ?: phoneServices.sharedShell.acquire().also { connection = it }
     val shell = withTimeoutOrNull(SHELL_WAIT_MS) { conn.shell.filterNotNull().first() }
         ?: run {
@@ -139,9 +160,8 @@ internal suspend fun TaskRun.connectPhone(a: RunAssembly, appAccess: com.wangzan
             create()
         } catch (e: Exception) {
             if (e is CancellationException || e !is IllegalStateException && e !is RemoteException) throw e
-            if (!parallel || !service.otherRunHasDisplay(this@connectPhone)) throw e
-            // 外壳建不出第二块屏:这次运行期间不再并行;本任务排在后面,等别的任务的屏都放掉再建
-            service.taskState.markSecondDisplayFailed()
+            if (!service.otherRunHasDisplay(this@connectPhone)) throw e
+            // 外壳建不出第二块屏:本任务排在后面,等别的任务的屏都放掉再建
             publish(TaskState.Held(GateReason.queued(WAITING_DISPLAY)))
             while (service.otherRunHasDisplay(this@connectPhone)) delay(DISPLAY_RETRY_MS)
             create()
@@ -179,7 +199,7 @@ internal suspend fun TaskRun.connectPhone(a: RunAssembly, appAccess: com.wangzan
     }
     val screen = AndroidScreen(
         a11y, shell, agentDisplay, { recovery.markClipHeld(it) },
-        clipLock = service.clipLock, checkOtherTasks = parallel,
+        clipLock = service.clipLock, checkOtherTasks = true,
         reserve = { pkg -> service.reservePackage(pkg, key, stillUsed(pkg, null)) },
         reserveCopy = { pkg, user -> service.reservePackage(claimKey(pkg, user), key, stillUsed(pkg, user)) },
         appFree = { pkg, user -> service.packageFree(claimKey(pkg, user), key, stillUsed(pkg, user)) },

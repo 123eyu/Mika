@@ -243,7 +243,7 @@ internal suspend fun TaskRun.assembleTakeover(a: RunAssembly, agent: AgentLoop, 
         }
     }
     // 别的任务的接管进出队时,本任务的接管通知要跟着换(排到最前、或后面多了一个)
-    if (parallel) side.launch { service.takeoverQueue.changes.collect { service.refreshNotifications(this@assembleTakeover) } }
+    side.launch { service.takeoverQueue.changes.collect { service.refreshNotifications(this@assembleTakeover) } }
     side.launch {
         combine(handover.stage, handover.problem) { stage, _ -> stage }.collect {
             runState._takeoverStage.value = it

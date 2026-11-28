@@ -76,7 +76,6 @@ class ProjectDrawerUiTest {
 
     private fun vm(
         projectImpact: ProjectDeleteImpact = ProjectDeleteImpact(conversations = 0, runningTasks = 0, schedules = 0),
-        parallel: Boolean = false,
     ) = ChatViewModel(
         CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
         MutableStateFlow(TaskState.Idle),
@@ -86,7 +85,6 @@ class ProjectDrawerUiTest {
         deletionImpact = { DeleteImpact(runningTask = false, schedules = 0) },
         removeConversation = { store.delete(it) },
         branchTitle = { "$it · 分支" },
-        parallelFlag = { parallel },
         sandboxReady = MutableStateFlow(false),
         io = Dispatchers.Main.immediate,
         projectStore = projects,
@@ -115,7 +113,7 @@ class ProjectDrawerUiTest {
     }
 
     @Test fun createProjectShowsPillAndSupportsQuickNewChatFromHeader() {
-        val vm = vm(parallel = true)
+        val vm = vm()
         show(vm, drawerOpen = true)
 
         compose.onNodeWithTag("drawer-new-project").performClick()

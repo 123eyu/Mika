@@ -183,7 +183,7 @@ class PersonalRuntime(private val app: MikaApp) {
                     is TaskState.WaitingInput -> "needs_you" to current.prompt
                     is TaskState.WaitingConfirmation -> "needs_you" to "需要你确认，点开任务处理"
                     is TaskState.WaitingTakeover -> "needs_you" to current.message
-                    is TaskState.Held -> (if (current.reason.queued) "queued" else "paused") to current.reason.why
+                    is TaskState.Held -> (when { current.reason.queued -> "queued"; current.reason.waitingSeat -> "running"; else -> "paused" }) to current.reason.why
                     is TaskState.Terminal -> "finishing" to "正在保存结果"
                     else -> "queued" to "等待开始"
                 }

@@ -65,8 +65,8 @@
     <string name="settings_pace_per_app_none">該当するアプリはありません</string>
     <string name="settings_pace_per_app_pick">選択</string>
     <string name="settings_pace_per_app_remove">削除（全体設定に従う）</string>
-    <string name="settings_parallel">同時に実行するタスク</string>
-    <string name="settings_parallel_sub">別々のチャットのタスクに、それぞれ専用の仮想画面を割り当てます</string>
+    <string name="settings_parallel">同時にスマホを操作するタスク</string>
+    <string name="settings_parallel_sub">アプリを操作するタスクはそれぞれ仮想画面を 1 つ使います。チャットやウェブ検索だけのタスクは数えません</string>
     <plurals name="settings_count_tasks">
         <item quantity="other">%1$d</item>
     </plurals>

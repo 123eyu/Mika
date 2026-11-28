@@ -42,7 +42,6 @@
     <string name="chat_working_on">Работает в приложении «%1$s»</string>
     <string name="chat_working">Работает</string>
     <string name="share_draft_failed">Не удалось добавить материал в разговор</string>
-    <string name="chat_wait_previous_task">Начнётся после завершения предыдущей задачи</string>
     <string name="chat_wait_unlock">Ждёт, пока вы разблокируете телефон</string>
     <string name="chat_waiting_for_you">Ждёт вас</string>
     <string name="chat_paused">На паузе</string>
@@ -89,7 +88,6 @@
     <string name="memory_and_skills">Память и навыки</string>
     <string name="drawer_browser">Браузер</string>
     <string name="drawer_recent">Недавние</string>
-    <string name="drawer_busy">Идёт задача. Переключать чаты можно после её завершения.</string>
     <string name="drawer_delete_title">Удалить этот чат?</string>
     <string name="drawer_delete_body">Чат «%1$s» и файлы в нём будут удалены.</string>
     <string name="drawer_delete_running">Выполняемая в нём задача будет остановлена.</string>

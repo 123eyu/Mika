@@ -465,7 +465,7 @@ class DeskChatOpsTest {
         val running = MutableStateFlow<TaskState>(TaskState.Running(1, "working"))
         val vm = ChatViewModel(backgroundScope, MutableStateFlow(TaskState.Idle), MutableStateFlow(Takeover.Stage.None), actions, store,
             io = StandardTestDispatcher(testScheduler), desk = deps, sandboxReady = MutableStateFlow(true),
-            parallelFlag = { true }, activeConversations = MutableStateFlow(listOf("child-1")),
+            activeConversations = MutableStateFlow(listOf("child-1")),
             runGoal = { "帮我订明天的日料" }, runState = { running }).also { runCurrent() }
         vm.pageShown(true)
         vm.switchTo("child-1")

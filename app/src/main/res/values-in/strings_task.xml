@@ -3,9 +3,8 @@
     <string name="notif_channel_prepare">Penyiapan latar belakang</string>
     <string name="notif_preparing">Mika sedang bersiap</string>
     <string name="notif_result_title">Hasil tugas Mika</string>
-    <string name="parallel_second_display_failed">Gagal membuat layar virtual kedua, jadi untuk sementara hanya satu tugas yang berjalan sekaligus</string>
-    <string name="parallel_needs_14">Menjalankan beberapa tugas sekaligus memerlukan Android 14 atau lebih baru</string>
-    <string name="parallel_low_ram">Ponsel ini memorinya kecil, jadi satu tugas berjalan sekaligus</string>
+    <string name="parallel_needs_14">Mengoperasikan ponsel untuk beberapa tugas sekaligus memerlukan Android 14 atau lebih baru</string>
+    <string name="parallel_low_ram">Ponsel ini memorinya kecil, jadi hanya satu aplikasi yang dioperasikan sekaligus</string>
     <string name="skill_suspended">Keterampilan ini belakangan tidak berhasil, jadi dijeda: %1$s</string>
     <string name="skill_verified">Keterampilan berhasil, kini dipakai secara rutin: %1$s</string>
     <string name="skill_learned">Mika mempelajari keterampilan: %1$s</string>
@@ -30,6 +29,8 @@
     <string name="fail_model_untested">Model utama belum lulus pengujian di %1$s. Buka Pengaturan › Model › %1$s dan ketuk “Uji lagi” untuk memeriksanya.</string>
     <string name="fail_no_web">Web tidak tersedia di perangkat ini, jadi pemeriksaan kondisi tidak bisa dijalankan</string>
     <string name="task_waiting_display">Dalam antrean: dimulai setelah tugas lain selesai</string>
+    <string name="task_waiting_seat">Menunggu “%1$s” selesai memakai ponsel</string>
+    <string name="task_waiting_seat_other">Menunggu tugas lain selesai memakai ponsel</string>
     <string name="task_no_phone_helper">Kontrol ponsel belum siap. Selesaikan “Siapkan kontrol ponsel” di Mika. Tugas web dan berkas tidak terpengaruh.</string>
     <string name="task_no_a11y">Layanan aksesibilitas Mika nonaktif. Aktifkan Mika di Aksesibilitas pada setelan sistem.</string>
     <string name="task_a11y_not_running">Layanan aksesibilitas Mika sudah aktif, tetapi Android belum menghubungkannya. Nonaktifkan Mika lalu aktifkan lagi di Aksesibilitas pada setelan sistem. Jika Android mencegahnya, izinkan dulu setelan dibatasi di info aplikasi Mika.</string>

@@ -93,7 +93,6 @@ internal class ChatBranchOps(private val vm: ChatViewModel, private val session:
         turn: Int, afterTurn: Boolean, allowed: (List<Exchange>, Int, Boolean) -> Boolean,
         retryPaths: List<String>? = null, onRetryCopied: (List<RetryAttachmentResult>) -> Unit = {},
     ): String? {
-        session.refreshParallel()
         _branchCopy.value = null
         val ui = _ui.value
         val sourceId = ui.conversationId ?: return null

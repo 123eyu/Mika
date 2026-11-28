@@ -108,9 +108,9 @@ private val deepSeekPrices by lazy { DeepSeekPriceCache(ProviderStore.modelHttp)
 /**
  * 一个任务的全部状态:虚拟屏、循环、关卡、接管、静音、监视。[TaskService] 只管服务生命周期、意图分发与通知。
  * 本任务自己的流只在它是「显示中」的任务([service.taskState.shownRun])时同步写到服务对外的流;
- * 别的任务(并行时)、或被新任务换下去的旧任务的写入只落在自己这份,不会盖掉显示中的那个。
+ * 别的任务、或被新任务换下去的旧任务的写入只落在自己这份,不会盖掉显示中的那个。
  * [scope] 是服务的作用域:旁路协程挂在它下面,不随任务协程一起取消,由 [execute] 收尾时取消。
- * [slot] 决定它的通知编号与按钮请求码;[parallel] 为 true 时(开关 parallelTasks)打开 App 前查别的任务是否在用。
+ * [slot] 决定它的通知编号与按钮请求码。
  */
 class TaskRun(
     val conversationId: String,
@@ -118,7 +118,6 @@ class TaskRun(
     internal val service: TaskService,
     private val scope: CoroutineScope,
     val slot: Int = 0,
-    val parallel: Boolean = false,
 ) : ScreenControl {
     override val manualControl = com.wangzan101.mika.core.run.ManualControl()
     internal data class ManualTarget(val port: com.wangzan101.mika.core.screen.uistate.ScreenPort, val identity: String, val width: Int, val height: Int, val inputWidth: Int, val inputHeight: Int)
@@ -687,6 +686,9 @@ class TaskRun(
         phone = null
         // 屏释放后、对外报结束前清掉:界面看到任务结束时已经没有屏了
         runState._displayId.value = -1
+        // 屏放了座位一起放(onEnded 里还会再放一次,重复放无害):不然两个用手机的任务同时收尾,
+        // 各自回锁时都看见对方还占着座位而都等,手机就一直不回锁
+        service.center.seats.release(key)
         runState._pipInput.value = null
         runState._pipSoundOn.value = false
         runState._appShown.value = false

@@ -17,7 +17,6 @@ internal class ChatDraftOps(private val vm: ChatViewModel, private val session: 
     private val draftConversations get() = vm.draftConversations
     private var liveIndex by session::liveIndex
     private var lingerJob by session::lingerJob
-    private var pendingStart by session::pendingStart
     private var screenSeen by session::screenSeen
     private var pipClosed by session::pipClosed
     private val store = vm.store
@@ -76,7 +75,6 @@ internal class ChatDraftOps(private val vm: ChatViewModel, private val session: 
         overLimit: Int = 0,
     ): Boolean {
         val drafts = sharedDrafts ?: return false
-        session.refreshParallel()
         if (inCurrentConversation) {
             val hasUnsentDraft = !_ui.value.importing && _ui.value.draft().hasContent
             if (!hasUnsentDraft) return applySharedDraftToCurrent(prepared, rejected, overLimit)
@@ -92,12 +90,6 @@ internal class ChatDraftOps(private val vm: ChatViewModel, private val session: 
             _ui.update { it.copy(pendingSharedDraft = pending) }
             return true
         }
-        if (pendingStart?.isActive == true &&
-            (_ui.value.conversationId == null || _ui.value.exchanges.getOrNull(liveIndex) == null)
-        ) {
-            drafts.discard(prepared.attachments)
-            return false
-        }
         val id = store.newConversation()
         val (draft, attachments) = persistSharedDraft(id, prepared) ?: return false
         cancelPendingSharedDraft()
@@ -105,8 +97,6 @@ internal class ChatDraftOps(private val vm: ChatViewModel, private val session: 
         val previous = _ui.value
         if (previous.conversationId == null) vm.bindPendingMainModel(id)
         if (previous.conversationId != id) vm.live.parkLive()
-        // 原任务还在等服务收尾时,直接按服务既有的排队能力交过去;它的开始和插话不能跟着新草稿走。
-        vm.sending.handOffPendingStart()
         lingerJob?.cancel()
         liveIndex = -1
         screenSeen = false

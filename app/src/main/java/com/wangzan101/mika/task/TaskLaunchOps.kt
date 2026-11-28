@@ -76,7 +76,6 @@ internal fun TaskService.begin(newGoal: String, requestedConversation: String?,
         }
         return
     }
-    parallel = FeatureFlags.get(this).speedFlags().parallelTasks
     // 同一对话里正在执行或排队的任务收到新原话时，交给它的 Inbox。
     requestedConversation?.let(center::byConversation)?.let { existing ->
         if (provenance.origin == RunOrigin.Ui) {
@@ -126,9 +125,7 @@ internal fun TaskService.startNew(newGoal: String, requestedConversation: String
         }
         return
     }
-    parallel = FeatureFlags.get(this).speedFlags().parallelTasks
-    // 别的对话的任务正在跑、并行关着(或已到上限)时不丢:登记处让它排在后面,那个任务收尾时放出来。
-    // 对话页先等服务空下来再交过来,但查完到交到之间别处(定时、电脑)可能先开始了一个,这里同样排上
+    // 任务总数到了上限时不丢:登记处让它排在后面,有任务收尾时放出来。
     val store = ConversationStore.shared(this)
     val conversationId = requestedConversation ?: store.newConversation()
     // 定时和电脑交来的任务不丢:这个对话还有任务时排在它后面

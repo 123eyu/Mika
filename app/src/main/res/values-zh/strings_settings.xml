@@ -65,8 +65,8 @@
     <string name="settings_pace_per_app_none">没有匹配的 App</string>
     <string name="settings_pace_per_app_pick">选它</string>
     <string name="settings_pace_per_app_remove">删除（跟随全局档位）</string>
-    <string name="settings_parallel">同时进行的任务</string>
-    <string name="settings_parallel_sub">不同对话的任务各占一块虚拟屏</string>
+    <string name="settings_parallel">同时操作手机的任务</string>
+    <string name="settings_parallel_sub">操作 App 的任务各用一块虚拟屏；只聊天、查网页的任务不占</string>
     <plurals name="settings_count_tasks">
         <item quantity="other">%1$d 个</item>
     </plurals>

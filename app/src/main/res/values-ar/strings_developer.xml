@@ -12,8 +12,6 @@
     <string name="dev_light_sub">ينفذ النموذج الخفيف الأسرع الخطوات السهلة، ويتولى النموذج الرئيسي المهام الصعبة</string>
     <string name="dev_replay">تكرار ما نجح في المرة السابقة</string>
     <string name="dev_replay_sub">يعيد تشغيل المسارات المحفوظة للمهام السابقة؛ ويعيد التحكم إلى النموذج إذا لم تتطابق</string>
-    <string name="dev_parallel">تشغيل المحادثات بالتوازي</string>
-    <string name="dev_parallel_sub">تحصل مهام المحادثات المختلفة على شاشة افتراضية لكل منها وتعمل معاً</string>
     <string name="dev_compaction">ملخصات منظّمة للمهام الطويلة</string>
     <string name="dev_compaction_sub">عند الحاجة إلى تلخيص خطوات كثيرة، تسجل الملاحظات الهدف والحقائق والتقدم والخطوة التالية</string>
     <string name="dev_group">آلية عمل Mika</string>

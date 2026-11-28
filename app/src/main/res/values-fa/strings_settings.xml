@@ -78,8 +78,8 @@
     <string name="settings_pace_per_app_none">برنامه‌ای پیدا نشد</string>
     <string name="settings_pace_per_app_pick">انتخاب</string>
     <string name="settings_pace_per_app_remove">حذف (پیروی از سرعت کلی)</string>
-    <string name="settings_parallel">کارهای هم‌زمان</string>
-    <string name="settings_parallel_sub">کارهای گفتگوهای مختلف هر کدام صفحهٔ مجازی خود را دارند</string>
+    <string name="settings_parallel">کارهایی که هم‌زمان با گوشی کار می‌کنند</string>
+    <string name="settings_parallel_sub">هر کاری که با برنامه‌ها کار می‌کند یک صفحهٔ مجازی می‌گیرد؛ کارهای فقط گفتگو و وب حساب نمی‌شوند</string>
     <plurals name="settings_count_tasks">
         <item quantity="one">%1$d</item>
         <item quantity="other">%1$d</item>

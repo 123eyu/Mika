@@ -42,7 +42,6 @@
     <string name="chat_working_on">%1$s で作業中</string>
     <string name="chat_working">作業中</string>
     <string name="share_draft_failed">共有された内容を会話に追加できませんでした</string>
-    <string name="chat_wait_previous_task">前のタスクが終わってから始まります</string>
     <string name="chat_wait_unlock">ロック解除を待っています</string>
     <string name="chat_waiting_for_you">あなたの対応を待っています</string>
     <string name="chat_paused">一時停止中</string>
@@ -86,7 +85,6 @@
     <string name="memory_and_skills">メモリとスキル</string>
     <string name="drawer_browser">ブラウザ</string>
     <string name="drawer_recent">最近</string>
-    <string name="drawer_busy">タスクを実行中です。終わったらチャットを切り替えられます。</string>
     <string name="drawer_delete_title">このチャットを削除しますか？</string>
     <string name="drawer_delete_body">「%1$s」とその中のファイルが削除されます。</string>
     <string name="drawer_delete_running">実行中のタスクは停止します。</string>

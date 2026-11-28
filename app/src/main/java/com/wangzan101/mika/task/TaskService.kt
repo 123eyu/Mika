@@ -1,6 +1,7 @@
 package com.wangzan101.mika.task
 
 import com.wangzan101.mika.i18n.tr
+import android.app.ActivityManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -60,8 +61,8 @@ private const val QUIET_GROUP = "com.wangzan101.mika.quiet"
 
 /**
  * 前台服务:在 Agent 虚拟屏上跑任务,单个任务的状态与执行在 [TaskRun],运行中的任务登记在 [TaskRegistry]。
- * 开关 parallelTasks 关着时同一时间只跑一个,别的对话交来的任务排在后面(不论从哪里交来,都不丢);
- * 打开时不同对话的任务可以同时跑,各占一块虚拟屏,上限见 [ParallelCapability],超出的排队。
+ * 不同对话的任务可以同时跑,总数上限见 [TaskCapacity],超出的排队(不论从哪里交来,都不丢);
+ * 同时操作手机的任务数由手机座位([TaskCenter.seats],座位数见 [ParallelCapability])限制,各占一块虚拟屏。
  * 每个任务各有一组通知(编号与按钮请求码按 [TaskRun.slot] 分开,按钮带着对话编号),
  * 前台常驻通知是其中一个任务的进度通知,同时有几个任务时注明「n 个任务进行中」。
  * 任务在跑时屏幕常亮([KeepAwake],不改系统设置和亮度);任务期间目标 App 静音(原模式持久化,异常退出后下次启动恢复),
@@ -74,8 +75,8 @@ private const val QUIET_GROUP = "com.wangzan101.mika.quiet"
 class TaskService : Service() {
     internal val taskState: TaskCenterState get() = (application as com.wangzan101.mika.MikaApp).taskState
     internal val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    /** 最近一次 start 时读到的开关;关着时登记处上限恒为 1。 */
-    @Volatile internal var parallel = false
+    /** 低内存设备:任务总数和手机座位都放得更紧;只查一次,座位数在锁里现读时不再碰系统服务。 */
+    internal val lowRam by lazy { getSystemService(ActivityManager::class.java).isLowRamDevice }
     internal val center by lazy {
         val app = application as com.wangzan101.mika.MikaApp
         val wsOf: (String) -> String = { id -> com.wangzan101.mika.chat.WorkspaceResolver.resolveFor(app, id).wire }
@@ -84,8 +85,9 @@ class TaskService : Service() {
             app.resources, app.followUpQueue,
             workspaceOf = { wsOf(it.conversationId) },
             resolveWorkspace = wsOf,
+            seatCount = { seatLimit().max },
         ) { c, g ->
-            TaskRun(c, g, this, scope, freeSlot(), parallel)
+            TaskRun(c, g, this, scope, freeSlot())
         }
     }
     internal val outbox get() = (application as com.wangzan101.mika.MikaApp).outbox
@@ -330,7 +332,7 @@ class TaskService : Service() {
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             .apply { if (threadId != null) setIdentifier(threadId).putExtra(MainActivity.EXTRA_OPEN_CONVERSATION, threadId) }
 
-        /** 并行时结果通知的下一个编号(循环使用)。 */
+        /** 结果通知的下一个编号(循环使用)。 */
         internal fun nextResultId() = ID_RESULT_FIRST + resultCount.getAndIncrement() % RESULT_IDS
 
         /**
@@ -423,7 +425,6 @@ class TaskService : Service() {
             CHANNEL_ATTENTION to NotificationManager.IMPORTANCE_HIGH,
         )
         internal const val ID_PROGRESS = 1
-        internal const val ID_RESULT = 2
         internal const val ID_ATTENTION = 3
         /** 留在后台的那一页的常驻通知(全局只有一页,不分槽位)。 */
         internal const val ID_KEPT = 4
@@ -665,6 +666,7 @@ class TaskService : Service() {
             is TaskState.Held -> when {
                 state.reason == TaskGate.LOCKED -> tr(R.string.task_wait_unlock) to tr(R.string.task_wait_unlock_body)
                 state.reason.queued -> tr(R.string.chat_queued) to state.reason.why
+                state.reason.waitingSeat -> tr(R.string.task_running) to state.reason.why
                 state.reason.resumable -> tr(R.string.chat_paused) to state.reason.why
                 else -> tr(R.string.chat_waiting_for_you) to state.reason.why
             }

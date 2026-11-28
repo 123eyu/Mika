@@ -32,4 +32,11 @@ class SpeedFlagsTest {
         // 阶梯式裁剪已转正,存着的旧设置照样读得出其余开关
         assertEquals(SpeedFlags(replay = true), SpeedFlags.parse("cacheFriendlyPrune,replay"))
     }
+
+    @Test fun legacyParallelTasksKeyIsIgnored() {
+        // 「不同对话同时进行」开关已撤掉,旧存储里打开过的照样读得出其余开关
+        assertEquals(SpeedFlags(replay = true, tablesAtBirth = true), SpeedFlags.parse("parallelTasks,replay,tablesAtBirth"))
+        assertEquals(SpeedFlags(replay = true), SpeedFlags.parse("parallelTasks=on,replay=on"))
+        assertEquals("replay", SpeedFlags.parse("parallelTasks,replay").describe())
+    }
 }

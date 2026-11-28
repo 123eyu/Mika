@@ -65,8 +65,8 @@
     <string name="settings_pace_per_app_none">Tidak ada aplikasi yang cocok</string>
     <string name="settings_pace_per_app_pick">Pilih</string>
     <string name="settings_pace_per_app_remove">Hapus (ikuti pace global)</string>
-    <string name="settings_parallel">Tugas sekaligus</string>
-    <string name="settings_parallel_sub">Tugas dari obrolan berbeda masing-masing mendapat layar virtual sendiri</string>
+    <string name="settings_parallel">Tugas yang memakai ponsel sekaligus</string>
+    <string name="settings_parallel_sub">Tugas yang mengoperasikan aplikasi masing-masing memakai satu layar virtual; tugas obrolan dan web saja tidak dihitung</string>
     <plurals name="settings_count_tasks">
         <item quantity="other">%1$d</item>
     </plurals>

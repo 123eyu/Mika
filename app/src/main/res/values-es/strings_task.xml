@@ -3,9 +3,8 @@
     <string name="notif_channel_prepare">Preparación en segundo plano</string>
     <string name="notif_preparing">Mika se está preparando</string>
     <string name="notif_result_title">Resultado de la tarea de Mika</string>
-    <string name="parallel_second_display_failed">No se pudo crear una segunda pantalla virtual, así que por ahora solo se ejecuta una tarea a la vez</string>
-    <string name="parallel_needs_14">Ejecutar varias tareas a la vez requiere Android 14 o posterior</string>
-    <string name="parallel_low_ram">Este teléfono tiene poca memoria, así que se ejecuta una tarea a la vez</string>
+    <string name="parallel_needs_14">Manejar el teléfono para varias tareas a la vez requiere Android 14 o posterior</string>
+    <string name="parallel_low_ram">Este teléfono tiene poca memoria, así que maneja una sola app a la vez</string>
     <string name="skill_suspended">Esta habilidad no ha funcionado bien últimamente, así que está en pausa: %1$s</string>
     <string name="skill_verified">La habilidad funcionó y ahora está en uso normal: %1$s</string>
     <string name="skill_learned">Mika aprendió una habilidad: %1$s</string>
@@ -32,6 +31,8 @@
     <string name="fail_model_untested">El modelo principal aún no ha pasado una prueba en %1$s. Ve a Ajustes › Modelos › %1$s y toca “Probar de nuevo” para comprobarlo.</string>
     <string name="fail_no_web">La web no está disponible en este dispositivo, así que no se puede comprobar la condición</string>
     <string name="task_waiting_display">En cola: empieza cuando termine la otra tarea</string>
+    <string name="task_waiting_seat">Esperando a que “%1$s” termine de usar el teléfono</string>
+    <string name="task_waiting_seat_other">Esperando a que otra tarea termine de usar el teléfono</string>
     <string name="task_no_phone_helper">El control del teléfono no está listo. Termina “Configurar el control del teléfono” en Mika. Las tareas web y de archivos no se ven afectadas.</string>
     <string name="task_no_a11y">El servicio de accesibilidad de Mika está desactivado. Activa Mika en Accesibilidad, en los ajustes del sistema.</string>
     <string name="task_a11y_not_running">El servicio de accesibilidad de Mika está activado, pero Android no se ha conectado a él. Desactiva Mika y vuelve a activarlo en Accesibilidad, en los ajustes del sistema. Si Android lo impide, permite primero los ajustes restringidos en la información de Mika.</string>

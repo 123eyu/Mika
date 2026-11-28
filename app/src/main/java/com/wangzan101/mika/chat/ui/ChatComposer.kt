@@ -138,6 +138,8 @@ internal fun Composer(
     onStopTask: (String) -> Unit = {},
     /** 进度条里一件的「查看详细过程」。 */
     onTaskDetail: (String) -> Unit = {},
+    /** 进度条里等手机座位的那一行:跳到占着手机的对话。 */
+    onTaskJump: (String) -> Unit = {},
 ) {
     val c = MikaTheme.colors
     var fieldFocused by remember { mutableStateOf(false) }
@@ -185,7 +187,7 @@ internal fun Composer(
             .padding(start = ComposerInset, end = ComposerInset, top = 10.dp, bottom = 6.dp),
     ) {
         Column(Modifier.fillMaxWidth()) {
-            DeskTray(deskTasks, reduceMotion, backdrop, onStopTask, onTaskDetail)
+            DeskTray(deskTasks, reduceMotion, backdrop, onStopTask, onTaskDetail, onTaskJump)
             FollowUpTray(
                 queued, active = mode != ComposerMode.Idle,
                 onEdit = onEditQueued, onCancel = onCancelQueued, onStartNow = onStartQueued, onActions = onQueueActions,

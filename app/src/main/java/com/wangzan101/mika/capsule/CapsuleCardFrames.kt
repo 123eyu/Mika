@@ -52,6 +52,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.wangzan101.mika.task.ConfirmationCopy
+import com.wangzan101.mika.task.jumpTarget
 import com.wangzan101.mika.chat.ui.ScreenCopy
 import com.wangzan101.mika.ui.components.ButtonKind
 import com.wangzan101.mika.ui.components.MikaLogo
@@ -201,7 +202,7 @@ internal fun Detail(
         }
         QueuedLine(queuedCount, onQueued)
         input()
-        FooterLinks(actions, CardCopy.SEE_PROCESS to { actions.openMika(r.run.conversationId) })
+        FooterLinks(actions, CardCopy.SEE_PROCESS to { actions.openMika(r.run.state.jumpTarget(r.run.conversationId)) })
     }
 }
 

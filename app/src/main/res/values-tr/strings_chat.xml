@@ -42,7 +42,6 @@
     <string name="chat_working_on">%1$s içinde çalışıyor</string>
     <string name="chat_working">Çalışıyor</string>
     <string name="share_draft_failed">Bu paylaşım sohbete eklenemedi</string>
-    <string name="chat_wait_previous_task">Önceki görev bitince başlar</string>
     <string name="chat_wait_unlock">Kilidi açmanız bekleniyor</string>
     <string name="chat_waiting_for_you">Sizi bekliyor</string>
     <string name="chat_paused">Duraklatıldı</string>
@@ -87,7 +86,6 @@
     <string name="memory_and_skills">Bellek ve beceriler</string>
     <string name="drawer_browser">Tarayıcı</string>
     <string name="drawer_recent">Son</string>
-    <string name="drawer_busy">Bir görev çalışıyor. Bittiğinde sohbet değiştirebilirsiniz.</string>
     <string name="drawer_delete_title">Bu sohbet silinsin mi?</string>
     <string name="drawer_delete_body">\“%1$s\” ve içindeki dosyalar silinecek.</string>
     <string name="drawer_delete_running">Çalışan görevi durdurulacak.</string>

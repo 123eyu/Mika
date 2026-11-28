@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import com.wangzan101.mika.ui.MarkdownText
 import com.wangzan101.mika.chat.ui.ScreenCopy
 import com.wangzan101.mika.chat.ui.UserMessage
+import com.wangzan101.mika.task.jumpTarget
 import com.wangzan101.mika.ui.components.ScrollToBottomButton
 import com.wangzan101.mika.ui.components.glassSource
 import com.wangzan101.mika.ui.components.rememberGlassBackdrop
@@ -89,7 +90,8 @@ internal fun ChatCard(
         QueuedLine(queuedCount, onQueued)
         if (r == null) TeachShelf(actions::teach, actions::voiceChat)
         input()
-        FooterLinks(actions, card.target?.let { id -> CardCopy.BACK_TO_MIKA to { actions.openMika(id) } })
+        // 那件在等手机座位时回到占着手机的那个对话
+        FooterLinks(actions, card.target?.let { id -> CardCopy.BACK_TO_MIKA to { actions.openMika(r?.run?.state?.jumpTarget(id) ?: id) } })
     }
 }
 

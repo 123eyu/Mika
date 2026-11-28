@@ -280,6 +280,17 @@ class FrontDeskTest {
     }
 
     @Test
+    fun seatWaitLineKeepsHolderTitleAndJumpTarget() = runTest {
+        port.add("t3", TaskState.Held(GateReason.waitingSeat("等「买菜」用完手机", "c2")))
+        val desk = desk()
+        desk.track("t3", "订票")
+        runCurrent()
+        val view = desk.active.value.single()
+        assertEquals("等「买菜」用完手机", view.line)
+        assertEquals("c2", view.jumpTo)
+    }
+
+    @Test
     fun queuedTaskShowsPositionAndReportsStartWhenItsTurnComes() = runTest {
         val state = port.add("t2", TaskState.Held(GateReason.queued("前面还有 1 个")))
         port.positions["t2"] = 1

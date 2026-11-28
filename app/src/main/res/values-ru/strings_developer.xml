@@ -12,8 +12,6 @@
     <string name="dev_light_sub">Простые шаги выполняет более быстрая лёгкая модель; сложные остаются за основной</string>
     <string name="dev_replay">Повторять то, что получилось раньше</string>
     <string name="dev_replay_sub">Воспроизводит сохранённые маршруты для уже выполнявшихся дел; если они не подходят, возвращает управление модели</string>
-    <string name="dev_parallel">Запускать чаты параллельно</string>
-    <string name="dev_parallel_sub">Задачи из разных чатов получают каждая свой виртуальный экран и идут одновременно</string>
     <string name="dev_compaction">Структурные сводки для долгих задач</string>
     <string name="dev_compaction_sub">Когда нужно сжать много шагов, записывает цель, факты, ход работы и следующий шаг</string>
     <string name="dev_group">Как работает Mika</string>

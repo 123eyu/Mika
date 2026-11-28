@@ -71,8 +71,8 @@
     <string name="settings_pace_per_app_none">Нет подходящих приложений</string>
     <string name="settings_pace_per_app_pick">Выбрать</string>
     <string name="settings_pace_per_app_remove">Убрать (глобальный темп)</string>
-    <string name="settings_parallel">Задач одновременно</string>
-    <string name="settings_parallel_sub">Задачи из разных чатов получают каждая свой виртуальный экран</string>
+    <string name="settings_parallel">Задач с телефоном одновременно</string>
+    <string name="settings_parallel_sub">Задачи, которые управляют приложениями, получают каждая свой виртуальный экран; задачи только с чатом или поиском в сети не считаются</string>
     <plurals name="settings_count_tasks">
         <item quantity="one">%1$d</item>
         <item quantity="few">%1$d</item>

@@ -24,4 +24,19 @@ class DeskNeedStatusTest {
         assertNull(ChatReduce.needStatus(TaskState.Held(TaskGate.LOCKED), { it }))
         assertNull(ChatReduce.needStatus(TaskState.Idle, { it }))
     }
+
+    @Test fun seatWaitDrawsNoCardAndShowsAWorkingLine() {
+        val held = TaskState.Held(GateReason.waitingSeat("等「买菜」用完手机", "c2"))
+        assertNull(ChatReduce.needStatus(held, { it }))
+        val ex = ChatReduce.state(Exchange("订票", emptyList(), ExchangeStatus.Working, live = true), held, { it })
+        assertEquals(ExchangeStatus.Working, ex.status)
+        assertEquals("等「买菜」用完手机", ex.line)
+    }
+
+    @Test fun seatWaitLineKnowsHolderUntilTheSeatIsGranted() {
+        val held = TaskState.Held(GateReason.waitingSeat("等「买菜」用完手机", "c2"))
+        val waiting = ChatReduce.state(Exchange("订票", emptyList(), ExchangeStatus.Working, live = true), held, { it })
+        assertEquals("c2", waiting.seatHolder)
+        assertNull(ChatReduce.state(waiting, TaskState.Running(step = 1, note = ""), { it }).seatHolder)
+    }
 }

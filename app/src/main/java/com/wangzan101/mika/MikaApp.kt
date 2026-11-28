@@ -569,7 +569,6 @@ class MikaApp : Application(), WebOwner, SandboxOwner, TaskEnvironment.Owner, Ph
             // 通话里在等主人回话时,这个对话里的下一句就是回话
             ownerAnswer = { id, text -> ownerQuestions.answerIn(id, text) },
             followUps = followUpQueue.changes,
-            serviceBusy = taskState.busy,
             appLabel = { ConfirmationNotifier.appLabel(app, it) },
             // 虚拟屏上打开过 App,或在用内置浏览器:画中画才有画面可看(只建了空屏的不算)
             screenOpen = tasks.previewOpen
@@ -578,7 +577,6 @@ class MikaApp : Application(), WebOwner, SandboxOwner, TaskEnvironment.Owner, Ph
             // 按对话取它自己的任务,不用服务对外那一份(并行时那是显示中的别的任务)
             liveRunId = { taskState.run(it)?.runId?.value },
             endedRunIds = taskState.endedRunIds,
-            parallelFlag = { FeatureFlags.get(app).speedFlags().parallelTasks },
             shownTask = taskState.shownTask,
             activeConversations = taskState.activeConversations,
             runGoal = { taskState.run(it)?.goal },

@@ -49,6 +49,8 @@ data class DeskTaskView(
     val steps: List<DeskStep> = emptyList(),
     val need: DeskNeed? = null,
     val updatedAt: Long = 0L,
+    /** 在等手机座位时占着手机的那个对话:点这一行跳过去;不在等座位时为 null。 */
+    val jumpTo: String? = null,
 )
 
 /**
@@ -175,6 +177,7 @@ class FrontDesk(
                 goal = old?.goal ?: ledger.get(taskId)?.words?.ifBlank { null },
                 startedAt = startedAt, steps = steps, need = needOf(state),
                 updatedAt = if (changed) now else old!!.updatedAt,
+                jumpTo = (state as? TaskState.Held)?.reason?.takeIf { it.waitingSeat }?.ref,
             )
             val replaced = if (old != null) list.map { if (it.taskId == taskId) view else it } else list + view
             // 一件任务开始会让后面排队的往前挪,排队位置每次都整体重取。
@@ -225,7 +228,12 @@ class FrontDesk(
 
     private fun lineOf(state: TaskState): String? = when (state) {
         is TaskState.Running -> deskLine(state.narration)
-        is TaskState.Held -> if (state.reason.queued) null else deskLine(state.reason.why)
+        // 等座位这句要留着「对话标题」:说的就是去哪个对话处理,剥掉就只剩「等用完手机」
+        is TaskState.Held -> when {
+            state.reason.queued -> null
+            state.reason.waitingSeat -> state.reason.why.take(DESK_LINE_MAX_CHARS).ifBlank { null }
+            else -> deskLine(state.reason.why)
+        }
         is TaskState.WaitingInput -> deskLine(state.prompt)
         is TaskState.WaitingTakeover -> deskLine(state.message)
         is TaskState.Succeeded -> deskLine(state.answer)

@@ -42,7 +42,6 @@
     <string name="chat_working_on">%1$s에서 작업 중</string>
     <string name="chat_working">작업 중</string>
     <string name="share_draft_failed">공유한 내용을 대화에 추가하지 못했어요</string>
-    <string name="chat_wait_previous_task">이전 작업이 끝나면 시작해요</string>
     <string name="chat_wait_unlock">잠금 해제를 기다리는 중</string>
     <string name="chat_waiting_for_you">내 차례를 기다리는 중</string>
     <string name="chat_paused">일시 중지됨</string>
@@ -86,7 +85,6 @@
     <string name="memory_and_skills">메모리 및 스킬</string>
     <string name="drawer_browser">브라우저</string>
     <string name="drawer_recent">최근</string>
-    <string name="drawer_busy">작업이 실행 중이에요. 끝나면 채팅을 바꿀 수 있어요.</string>
     <string name="drawer_delete_title">이 채팅을 삭제할까요?</string>
     <string name="drawer_delete_body">“%1$s”과(와) 그 안의 파일이 삭제돼요.</string>
     <string name="drawer_delete_running">실행 중인 작업도 중지돼요.</string>

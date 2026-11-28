@@ -10,7 +10,7 @@ import com.wangzan101.mika.core.screen.uistate.AppWait
 
 sealed interface StartResult<out R> {
     data class Started<R>(val run: R) : StartResult<R>
-    /** 超出并行上限,排在队里第 [position] 个。 */
+    /** 超出任务总数上限,排在队里第 [position] 个。 */
     data class Queued<R>(val run: R, val position: Int) : StartResult<R>
     /** 已登记过的渠道消息不再次执行，包括进程重启后服务端重投的消息。 */
     data object DuplicateChannelMessage : StartResult<Nothing>
@@ -21,7 +21,8 @@ sealed interface StartResult<out R> {
 }
 
 /**
- * 按对话索引的运行中任务、并行上限与跨任务的全局锁。上限为 1 时(开关关着)就是 M1 的一次一个。
+ * 按对话索引的运行中任务、任务总数上限、手机座位([seats])与跨任务的全局锁。
+ * [limit] 只是总数上限(宽的常量,见 [TaskCapacity]),同时操作手机的任务数由座位限制,聊天不受它影响。
  * [create] 在登记时建任务对象;R 在产品里是 [TaskRun],测试里换成普通对象。
  */
 class TaskCenter<R : Any>(
@@ -36,10 +37,14 @@ class TaskCenter<R : Any>(
     /** 同工作区串行化使用的键;默认按对话各自隔离,传入工作区解析器后同项目对话会排队串行。 */
     private val workspaceOf: (R) -> String = conversationOf,
     private val resolveWorkspace: (String) -> String = { it },
+    /** 手机座位数,每次现读;在 [PhoneSeats] 的锁里调用,必须便宜、不拿别的锁。 */
+    seatCount: () -> Int = { 1 },
     private val create: (conversationId: String, goal: String) -> R,
 ) {
     private val running = mutableListOf<R>()
     private val queued = mutableListOf<R>()
+    /** 同时操作手机的名额,按任务编号([keyOf])占;任务收尾时在 [onEnded] 里放掉。 */
+    val seats = PhoneSeats(seatCount)
     /** 迁移中的调用方继续从这里拿资源，实际所有权归 [resources]。 */
     val clipLock get() = resources.clipboard
     val takeoverQueue get() = resources.takeoverQueue
@@ -86,6 +91,15 @@ class TaskCenter<R : Any>(
     @Synchronized fun byKey(key: String): R? = runs().firstOrNull { keyOf(it) == key }
 
     /**
+     * 占着或等着手机座位的任务(不含 [ignore]);只聊天、没碰手机的不算。
+     * 锁序是 TaskCenter → [PhoneSeats],座位那边不回调这里。
+     */
+    @Synchronized fun phoneUsers(ignore: R? = null): List<R> {
+        val keys = seats.holders().toSet() + seats.waiting()
+        return runs().filter { it !== ignore && keyOf(it) in keys }
+    }
+
+    /**
      * 任务 [owner] 要在自己的屏上开 [pkg]:没人占、自己占着、或占着的任务已经不在用它([stillUsed] 为假,
      * 比如 App 自己关掉了)时占下并返回 true;否则另一个任务正在用,返回 false。查与占在同一把锁里,两个任务同时开同一个 App 只有一个能成。
      */
@@ -124,6 +138,7 @@ class TaskCenter<R : Any>(
         if (queued.removeAll { it === run }) return emptyList()
         running.removeAll { it === run }
         resources.releaseOwner(keyOf(run))
+        seats.release(keyOf(run))
         val started = mutableListOf<R>()
         while (queued.isNotEmpty() && running.size < limit().max) {
             val index = queued.indexOfFirst { candidate ->

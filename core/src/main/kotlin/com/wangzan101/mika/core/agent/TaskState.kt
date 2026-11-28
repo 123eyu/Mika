@@ -84,16 +84,24 @@ sealed interface TaskState {
  * 为什么停下来等:由给出这个前置条件的能力定(核心不认识具体是什么)。[code] 是运行记录里 state 事件的名字,
  * [why] 是给用户看的说明(可为空),[resumable] 为 true 时用户可以点「继续」,否则条件满足后自动继续。
  * [needsYou] 为 true 时要用户在手机上动一下手才能接着做(界面上算「要你处理」,不只是等条件)。
+ * [ref] 是点了这条原因要跳去的对话(目前只有等座位用:等的是哪个对话在用手机);没有就不跳。
  */
-data class GateReason(val code: String, val why: String = "", val resumable: Boolean = false, val needsYou: Boolean = false) {
+data class GateReason(val code: String, val why: String = "", val resumable: Boolean = false, val needsYou: Boolean = false, val ref: String? = null) {
     /** 还没开始、排在开始队列里(并行已满、同一对话已有任务):轮到时自动开始,点「继续」不能让它插队。 */
     val queued: Boolean get() = code == QUEUED
 
+    /** 已经开始、等别的任务用完手机(手机座位满了):仍算在干活,不算排队、不要你处理;轮到时自动接着做。 */
+    val waitingSeat: Boolean get() = code == WAITING_SEAT
+
     companion object {
         const val QUEUED = "queued"
+        const val WAITING_SEAT = "waiting_seat"
 
         /** 排队等开始;[why] 是给用户看的那句(比如前面还有几个任务)。 */
         fun queued(why: String) = GateReason(QUEUED, why)
+
+        /** 等手机座位;[why] 写在等谁,[ref] 是那个对话。 */
+        fun waitingSeat(why: String, ref: String?) = GateReason(WAITING_SEAT, why, ref = ref)
     }
 }
 

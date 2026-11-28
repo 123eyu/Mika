@@ -125,7 +125,7 @@ internal fun LazyListScope.exchange(
     // 用户消息下面的一条弱化小字,和前面的主对话区分主从。撤回的插话不显示。
     val steers = ex.steers.filterNot { it.state == SteerState.Withdrawn }
     if (active && !answering) {
-        item("s$index") { WorkBlock(ex, steers.map { it.text }, reduceMotion, backgroundNote, openRun) }
+        item("s$index") { WorkBlock(ex, steers.map { it.text }, reduceMotion, backgroundNote, vm::openConversation, openRun) }
     } else {
         steers.forEach { n ->
             item("m$index-${n.id}") {
@@ -317,7 +317,10 @@ internal fun replyJoinsAbove(exchanges: List<Exchange>, i: Int, calls: CallMarks
  * 在后台操作手机时最下面一行小字。
  */
 @Composable
-internal fun WorkBlock(ex: Exchange, steers: List<String>, reduceMotion: Boolean, backgroundNote: Boolean, openRun: (String) -> Unit) {
+internal fun WorkBlock(
+    ex: Exchange, steers: List<String>, reduceMotion: Boolean, backgroundNote: Boolean,
+    openConversation: (String) -> Unit = {}, openRun: (String) -> Unit,
+) {
     val c = MikaTheme.colors
     val paused = ChatCopy.paused(ex.status)
     val elapsed = rememberElapsed(ex.startedAt)
@@ -329,7 +332,10 @@ internal fun WorkBlock(ex: Exchange, steers: List<String>, reduceMotion: Boolean
         ) {
             BreathingDot(paused, reduceMotion)
             Text(
-                ChatCopy.progressLine(ex), Modifier.weight(1f), style = NowText, color = c.ink,
+                ChatCopy.progressLine(ex),
+                // 等手机座位时点这一行去占着手机的那个对话
+                Modifier.weight(1f).then(ex.seatHolder?.let { id -> Modifier.clickable(role = Role.Button) { openConversation(id) } } ?: Modifier),
+                style = NowText, color = c.ink,
                 maxLines = 2, overflow = TextOverflow.Ellipsis,
             )
             if (elapsed != null) Text(ChatCopy.clock(elapsed), style = ClockText, color = c.ink3)

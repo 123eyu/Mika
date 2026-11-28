@@ -65,8 +65,8 @@
     <string name="settings_pace_per_app_none">일치하는 앱이 없습니다</string>
     <string name="settings_pace_per_app_pick">선택</string>
     <string name="settings_pace_per_app_remove">삭제(전역 속도 따르기)</string>
-    <string name="settings_parallel">동시 작업</string>
-    <string name="settings_parallel_sub">서로 다른 채팅의 작업이 각자 가상 화면을 가져요</string>
+    <string name="settings_parallel">휴대전화를 동시에 조작하는 작업</string>
+    <string name="settings_parallel_sub">앱을 조작하는 작업은 각각 가상 화면을 하나씩 써요. 채팅이나 웹 검색만 하는 작업은 포함되지 않아요</string>
     <plurals name="settings_count_tasks">
         <item quantity="other">%1$d</item>
     </plurals>

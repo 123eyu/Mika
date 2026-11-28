@@ -41,8 +41,6 @@ internal enum class SettingsRequirement {
     Memory,
     /** 接入了模型下的子页路由。 */
     ModelSubPages,
-    /** 实验开关「同时进行的任务」打开着。 */
-    ParallelTasks,
     /** Android 16+ 的实时任务通知。 */
     LiveTaskUpdates,
 }

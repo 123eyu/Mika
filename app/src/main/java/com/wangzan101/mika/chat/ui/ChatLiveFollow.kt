@@ -27,7 +27,6 @@ internal class ChatLiveFollow(private val vm: ChatViewModel, private val session
     private val parkedJobs = session.parkedJobs
     private var liveIndex by session::liveIndex
     private var lingerJob by session::lingerJob
-    private var pendingStart by session::pendingStart
     private var screenSeen by session::screenSeen
     private var pipClosed by session::pipClosed
     private val scope = vm.scope
@@ -67,7 +66,7 @@ internal class ChatLiveFollow(private val vm: ChatViewModel, private val session
         val ui = _ui.value
         val id = ui.conversationId ?: return
         val live = ui.exchanges.getOrNull(liveIndex) ?: return
-        if (!live.status.active() || (id !in activeConversations.value && pendingStart?.isActive != true)) return
+        if (!live.status.active() || id !in activeConversations.value) return
         parked[id] = Parked(live, screenSeen, pipClosed)
         parkedJobs.remove(id)?.cancel()
         val flow = runState(id) ?: return
@@ -185,7 +184,7 @@ internal class ChatLiveFollow(private val vm: ChatViewModel, private val session
             }
             current != conversationId -> {
                 val live = _ui.value.exchanges.getOrNull(liveIndex)
-                if (live != null && live.status.active() && current in activeConversations.value && pendingStart?.isActive != true) actions.show(current)
+                if (live != null && live.status.active() && current in activeConversations.value) actions.show(current)
                 return
             }
         }
@@ -231,13 +230,10 @@ internal class ChatLiveFollow(private val vm: ChatViewModel, private val session
      * 这个对话有任务在跑(从悬浮胶囊、定时任务开始的)而这里没在跟,或服务显示的换成了别的任务,就接上它。
      */
     fun refresh() {
-        session.refreshParallel()
         val id = _ui.value.conversationId ?: return
         syncSaved(id)
         if (id !in activeConversations.value) { actions.drainFollowUps(id); return }
-        if (pendingStart?.isActive == true) return
-        // 开关关着、这里没在跟任务时换对话要等任务结束:那时屏上这个对话的任务就是服务里唯一在跑的
-        follow(id, if (session.parallel()) unpark(id) else null)
+        follow(id, unpark(id))
     }
 
     /**

@@ -114,14 +114,12 @@ data class CurrentConversation(val id: String?, val running: Boolean, val title:
  * 侧栏的三段:「进行中」是当前对话(有任务时)和别的有任务在跑的对话;「置顶」是其余置顶了的对话,最近置顶的在前;
  * 「最近」是剩下的对话,最近改过的在前。每个对话只出现在一段里:置顶的对话有任务在跑时列在进行中(带图钉),跑完回到置顶。
  * 归档的对话不进置顶和最近,但仍然在跑任务时列在进行中;当前正在看的那个即使归档了也留着,方便知道自己在哪。
- * [canSwitch] 为假(任务进行中、没开并行)时只有当前对话可点。
  */
 fun drawerSections(
     all: List<ConversationSummary>,
     current: CurrentConversation,
     others: List<String>,
     otherTitle: (String) -> String?,
-    canSwitch: Boolean,
     now: Long,
     zone: ZoneId = ZoneId.systemDefault(),
     projects: List<Project> = emptyList(),
@@ -141,12 +139,12 @@ fun drawerSections(
         others.filter { it != current.id }.distinct().forEach { id ->
             val title = (byId[id]?.title ?: otherTitle(id))?.let(ChatCopy::plainTitle)?.ifBlank { null } ?: tr(R.string.drawer_running_task)
             val pid = projectOf(id)
-            add(DrawerConversation(id, title, tr(R.string.drawer_running), running = true, current = false, enabled = canSwitch, time = timeOf(id), pinned = pinned(id), site = byId[id]?.page?.host, branch = byId[id]?.branchOf != null, archived = archived(id), saved = saved(id), projectId = pid, projectName = pid?.let(projectNames::get)))
+            add(DrawerConversation(id, title, tr(R.string.drawer_running), running = true, current = false, enabled = true, time = timeOf(id), pinned = pinned(id), site = byId[id]?.page?.host, branch = byId[id]?.branchOf != null, archived = archived(id), saved = saved(id), projectId = pid, projectName = pid?.let(projectNames::get)))
         }
     }
     val runningIds = running.mapNotNull { it.id }.toSet()
     fun entry(s: ConversationSummary): DrawerConversation =
-        drawerEntry(s, current.id, canSwitch, running = s.id in runningIds, time = timeOf(s.id), projectName = s.projectId?.let(projectNames::get))
+        drawerEntry(s, current.id, running = s.id in runningIds, time = timeOf(s.id), projectName = s.projectId?.let(projectNames::get))
     // 归档的对话不在主列表里;当前正在看的那个例外,不然打开归档对话后不知道自己在哪
     val rest = all.filter { it.id !in runningIds && (it.archivedAt == null || it.id == current.id) }
     val grouped = rest.filter { it.projectId != null && it.projectId in projectNames }.groupBy { it.projectId!! }
@@ -166,7 +164,6 @@ fun drawerSections(
 internal fun drawerEntry(
     s: ConversationSummary,
     currentId: String?,
-    canSwitch: Boolean,
     running: Boolean,
     time: String,
     subtitle: String = "",
@@ -175,7 +172,7 @@ internal fun drawerEntry(
 ): DrawerConversation {
     val isCurrent = s.id == currentId
     return DrawerConversation(
-        s.id, ChatCopy.plainTitle(s.title), subtitle, running, isCurrent, canSwitch || isCurrent, time,
+        s.id, ChatCopy.plainTitle(s.title), subtitle, running, isCurrent, true, time,
         pinned = s.pinnedAt != null, site = s.page?.host, branch = s.branchOf != null,
         archived = s.archivedAt != null, saved = s.updatedAt != 0L, archivedAt = s.archivedAt, target = target,
         projectId = s.projectId, projectName = projectName,

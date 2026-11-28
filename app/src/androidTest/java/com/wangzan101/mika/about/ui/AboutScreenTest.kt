@@ -266,7 +266,7 @@ class AboutScreenTest {
         compose.setContent {
             MikaTheme {
                 ChatDrawer(
-                    Prerequisites.Check(emptyList()), DrawerSections(emptyList(), emptyList()), canSwitch = true,
+                    Prerequisites.Check(emptyList()), DrawerSections(emptyList(), emptyList()),
                     onNew = {},
                     onSettings = { calls += "settings" }, onOpen = {},
                     onAbout = { calls += "about" }, aboutDot = true,
@@ -296,7 +296,7 @@ class AboutScreenTest {
         compose.setContent {
             MikaTheme {
                 ChatDrawer(
-                    Prerequisites.Check(emptyList()), DrawerSections(emptyList(), emptyList()), canSwitch = true,
+                    Prerequisites.Check(emptyList()), DrawerSections(emptyList(), emptyList()),
                     onNew = {}, onSettings = {}, onOpen = {},
                 )
             }

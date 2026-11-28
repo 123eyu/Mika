@@ -3,9 +3,8 @@
     <string name="notif_channel_prepare">الإعداد في الخلفية</string>
     <string name="notif_preparing">يستعد Mika</string>
     <string name="notif_result_title">نتيجة مهمة Mika</string>
-    <string name="parallel_second_display_failed">تعذّر إنشاء شاشة افتراضية ثانية، لذا لا يمكن تشغيل أكثر من مهمة واحدة في الوقت الحالي</string>
-    <string name="parallel_needs_14">يتطلب تشغيل عدة مهام في آنٍ واحد Android 14 أو أحدث</string>
-    <string name="parallel_low_ram">ذاكرة هذا الهاتف قليلة، لذا تُشغّل مهمة واحدة في كل مرة</string>
+    <string name="parallel_needs_14">يتطلب تشغيل الهاتف لعدة مهام في آنٍ واحد Android 14 أو أحدث</string>
+    <string name="parallel_low_ram">ذاكرة هذا الهاتف قليلة، لذا يُشغَّل تطبيق واحد في كل مرة</string>
     <string name="skill_suspended">لم تكن هذه المهارة تعمل مؤخرًا، لذا أُوقفت مؤقتًا: %1$s</string>
     <string name="skill_verified">نجحت المهارة، وهي الآن قيد الاستخدام المعتاد: %1$s</string>
     <string name="skill_learned">تعلّم Mika مهارة: %1$s</string>
@@ -35,6 +34,8 @@
     <string name="fail_model_untested">لم يجتز النموذج الرئيسي اختبارًا على %1$s بعد. انتقل إلى الإعدادات › النماذج › %1$s وانقر على «اختبر مجددًا» للتحقق منه.</string>
     <string name="fail_no_web">الويب غير متاح على هذا الجهاز، لذا لا يمكن تشغيل فحص الشرط</string>
     <string name="task_waiting_display">في قائمة الانتظار: تبدأ بعد انتهاء المهمة الأخرى</string>
+    <string name="task_waiting_seat">في انتظار أن ينتهي «%1$s» من استخدام الهاتف</string>
+    <string name="task_waiting_seat_other">في انتظار أن تنتهي مهمة أخرى من استخدام الهاتف</string>
     <string name="task_no_phone_helper">التحكم بالهاتف غير جاهز. أكمل «إعداد التحكم بالهاتف» في Mika. لا تتأثر مهام الويب والملفات.</string>
     <string name="task_no_a11y">خدمة إمكانية الوصول في Mika متوقفة. فعّل Mika ضمن إمكانية الوصول في إعدادات النظام.</string>
     <string name="task_a11y_not_running">خدمة إمكانية الوصول في Mika مفعّلة، لكن Android لم يتصل بها. أوقف Mika ثم أعد تشغيله ضمن إمكانية الوصول في إعدادات النظام. إذا منع Android ذلك، فاسمح أولًا بالإعدادات المقيّدة في معلومات تطبيق Mika.</string>

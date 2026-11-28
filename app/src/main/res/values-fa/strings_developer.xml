@@ -12,8 +12,6 @@
     <string name="dev_light_sub">مدل سبک و سریع‌تر مراحل ساده را انجام می‌دهد؛ مراحل دشوار به مدل اصلی سپرده می‌شوند</string>
     <string name="dev_replay">تکرار روشی که دفعهٔ قبل موفق بود</string>
     <string name="dev_replay_sub">مسیرهای ذخیره‌شدهٔ کارهای قبلی را تکرار می‌کند؛ اگر مطابقت نداشته باشند، کار را به مدل برمی‌گرداند</string>
-    <string name="dev_parallel">اجرای هم‌زمان گفتگوها</string>
-    <string name="dev_parallel_sub">کارهای گفتگوهای مختلف هر کدام صفحهٔ مجازی خود را دارند و هم‌زمان اجرا می‌شوند</string>
     <string name="dev_compaction">خلاصه‌های ساختاریافته برای کارهای طولانی</string>
     <string name="dev_compaction_sub">هنگام خلاصه کردن مراحل زیاد، هدف، اطلاعات، پیشرفت و مرحلهٔ بعدی را ثبت می‌کند</string>
     <string name="dev_group">نحوهٔ کار میکا</string>

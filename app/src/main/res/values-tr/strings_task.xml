@@ -3,9 +3,8 @@
     <string name="notif_channel_prepare">Arka plan kurulumu</string>
     <string name="notif_preparing">Mika hazırlanıyor</string>
     <string name="notif_result_title">Mika görev sonucu</string>
-    <string name="parallel_second_display_failed">İkinci bir sanal ekran oluşturulamadı, bu yüzden şimdilik aynı anda yalnızca bir görev çalışıyor</string>
-    <string name="parallel_needs_14">Aynı anda birkaç görev çalıştırmak Android 14 veya üstü gerektirir</string>
-    <string name="parallel_low_ram">Bu telefonda az bellek var, bu yüzden aynı anda bir görev çalışıyor</string>
+    <string name="parallel_needs_14">Telefonu aynı anda birkaç görev için kullanmak Android 14 veya üstü gerektirir</string>
+    <string name="parallel_low_ram">Bu telefonda az bellek var, bu yüzden aynı anda tek bir uygulama kullanılır</string>
     <string name="skill_suspended">Bu beceri son zamanlarda çalışmıyor, bu yüzden duraklatıldı: %1$s</string>
     <string name="skill_verified">Beceri işe yaradı, artık normal kullanımda: %1$s</string>
     <string name="skill_learned">Mika bir beceri öğrendi: %1$s</string>
@@ -31,6 +30,8 @@
     <string name="fail_model_untested">Ana model henüz %1$s üzerinde bir testi geçmedi. Ayarlar › Modeller › %1$s\'e gidin ve kontrol etmek için \“Tekrar test et\”e dokunun.</string>
     <string name="fail_no_web">Bu cihazda web kullanılamıyor, bu yüzden koşul denetimi çalışamaz</string>
     <string name="task_waiting_display">Sırada: diğer görev bitince başlar</string>
+    <string name="task_waiting_seat">“%1$s” telefonla işini bitirene kadar bekleniyor</string>
+    <string name="task_waiting_seat_other">Başka bir görev telefonla işini bitirene kadar bekleniyor</string>
     <string name="task_no_phone_helper">Telefon kontrolü hazır değil. Mika\'da \“Telefon kontrolünü kur\”u tamamlayın. Web ve dosya görevleri etkilenmez.</string>
     <string name="task_no_a11y">Mika\'nın erişilebilirlik hizmeti kapalı. Sistem ayarlarında Erişilebilirlik altında Mika\'yı açın.</string>
     <string name="task_a11y_not_running">Mika\'nın erişilebilirlik hizmeti etkin, ancak Android onu bağlamadı. Sistem ayarlarında Erişilebilirlik altında Mika\'yı kapatıp yeniden açın. Android engelliyorsa, önce Mika\'nın uygulama bilgisinde kısıtlı ayarlara izin verin.</string>

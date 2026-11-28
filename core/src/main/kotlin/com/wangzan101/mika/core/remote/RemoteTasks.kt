@@ -82,6 +82,8 @@ object RemoteStatus {
         is TaskState.Held -> when {
             state.reason.needsYou -> WAITING_ON_PHONE
             state.reason.queued -> QUEUED
+            // 等手机座位:已经开始、仍在干活
+            state.reason.waitingSeat -> RUNNING
             else -> PAUSED
         }
         is TaskState.WaitingInput -> WAITING_FOR_ANSWER

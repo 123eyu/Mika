@@ -57,7 +57,7 @@ class FeatureFlags(private val prefs: SharedPreferences) {
         edit.commit()
     }
 
-    /** 并行任务时最多同时跑几个(用户设定,1–3);真正的上限还要看设备,见 ParallelCapability。 */
+    /** 最多几个任务同时操作手机(手机座位,用户设定,1–3);真正的座位数还要看设备,见 ParallelCapability。 */
     fun parallelMax(): Int = prefs.getInt(PARALLEL_MAX, ParallelCapability.DEFAULT_MAX)
 
     fun setParallelMax(max: Int) {

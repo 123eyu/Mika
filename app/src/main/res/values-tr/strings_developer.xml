@@ -12,8 +12,6 @@
     <string name="dev_light_sub">Daha hızlı hafif model kolay adımları yapar; ana model zor olanları korur</string>
     <string name="dev_replay">Geçen sefer işe yarayanı tekrarla</string>
     <string name="dev_replay_sub">Daha önce yapılanlar için kayıtlı rotaları tekrarlar; uymazsa modele geri verir</string>
-    <string name="dev_parallel">Sohbetleri paralel çalıştır</string>
-    <string name="dev_parallel_sub">Farklı sohbetlerden gelen görevlerin her biri bir sanal ekran alır ve birlikte çalışır</string>
     <string name="dev_compaction">Uzun görevler için yapılandırılmış özetler</string>
     <string name="dev_compaction_sub">Birçok adımın sıkıştırılması gerektiğinde hedefi, olguları, ilerlemeyi ve sonraki adımı not eder</string>
     <string name="dev_group">Mika nasıl çalışır</string>

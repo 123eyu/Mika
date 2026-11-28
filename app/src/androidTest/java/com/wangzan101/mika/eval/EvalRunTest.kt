@@ -70,7 +70,7 @@ import org.junit.runner.RunWith
  * `-e evalVariants on`(回放评测,串行):只跑带变体的题;每题先跑原题(办成了就记下路线),再依次跑它的各个变体。
  * 汇总的指标只算变体,原题单列一节;变体的运行记录在 <原题 id>_v<n>/ 下。
  *
- * `-e evalParallel <n>`(n ≥ 2,要同时打开 parallelTasks):按「用到的 App 不相交」贪心分组([EvalPairing]),同组的题同时跑,
+ * `-e evalParallel <n>`(n ≥ 2,同时操作手机的任务数还受设置里的座位数限制):按「用到的 App 不相交」贪心分组([EvalPairing]),同组的题同时跑,
  * 汇总加「总墙钟时间」。同组题共用一份自动回答(按提问里的关键字找各题的 answers)和步数上限(取组内最大)。
  * 题因同组另一题占着 App 而没办成时,失败原因记为 [Scoring.INTERFERENCE_PREFIX](单列一类,不算评测器问题)。
  *
@@ -139,7 +139,6 @@ class EvalRunTest {
         val runs = RunStore(context)
 
         val parallel = args.getString("evalParallel")?.toInt() ?: 1
-        require(parallel == 1 || flags.parallelTasks) { "evalParallel needs evalFlags parallelTasks=on" }
         val variants = args.getString("evalVariants") == "on"
         // 变体要用原题刚记下的路线,只能一题接一题跑
         require(!variants || parallel == 1) { "evalVariants runs serially; drop evalParallel" }

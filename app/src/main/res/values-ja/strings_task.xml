@@ -3,9 +3,8 @@
     <string name="notif_channel_prepare">バックグラウンドのセットアップ</string>
     <string name="notif_preparing">Mika が準備しています</string>
     <string name="notif_result_title">Mika のタスクの結果</string>
-    <string name="parallel_second_display_failed">2 つ目の仮想画面を作成できなかったため、今は一度に 1 つのタスクだけを実行します</string>
-    <string name="parallel_needs_14">複数のタスクを同時に実行するには Android 14 以降が必要です</string>
-    <string name="parallel_low_ram">このスマホはメモリが少ないため、一度に 1 つのタスクだけを実行します</string>
+    <string name="parallel_needs_14">スマホを同時に操作するには Android 14 以降が必要です</string>
+    <string name="parallel_low_ram">このスマホはメモリが少ないため、一度に 1 つのアプリだけを操作します</string>
     <string name="skill_suspended">このスキルは最近うまく動いていないため、一時停止しました: %1$s</string>
     <string name="skill_verified">スキルが有効でした。通常の利用に移りました: %1$s</string>
     <string name="skill_learned">Mika がスキルを学習しました: %1$s</string>
@@ -30,6 +29,8 @@
     <string name="fail_model_untested">メインモデルは、%1$s でのテストにまだ通っていません。「設定 › モデル › %1$s」で「もう一度テスト」をタップして確認してください。</string>
     <string name="fail_no_web">この端末ではウェブを使えないため、条件の確認を実行できません</string>
     <string name="task_waiting_display">待機中: 別のタスクが終わってから始まります</string>
+    <string name="task_waiting_seat">「%1$s」がスマホを使い終わるのを待っています</string>
+    <string name="task_waiting_seat_other">別のタスクがスマホを使い終わるのを待っています</string>
     <string name="task_no_phone_helper">スマホの操作の準備ができていません。Mika で「スマホの操作を設定」を済ませてください。ウェブとファイルのタスクには影響しません。</string>
     <string name="task_no_a11y">Mika のユーザー補助サービスがオフです。システム設定の「ユーザー補助」で Mika をオンにしてください。</string>
     <string name="task_a11y_not_running">Mika のユーザー補助サービスは有効ですが、Android がまだ接続していません。システム設定の「ユーザー補助」で Mika を一度オフにしてから、もう一度オンにしてください。Android にブロックされる場合は、先に Mika のアプリ情報で「制限された設定」を許可してください。</string>

@@ -85,6 +85,7 @@ internal fun trayOrder(tasks: List<DeskTaskView>): List<DeskTaskView> =
 internal fun DeskTray(
     tasks: List<DeskTaskView>, reduceMotion: Boolean, backdrop: GlassBackdrop?,
     onStop: (String) -> Unit, onDetail: (String) -> Unit,
+    onJump: (String) -> Unit = {},
 ) {
     val active = trayOrder(tasks)
     if (active.isEmpty()) return
@@ -117,7 +118,9 @@ internal fun DeskTray(
                         maxLines = 1, overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        currentStep(head), style = TrayText, color = if (needsYou) c.warn else c.ink2,
+                        currentStep(head),
+                        head.jumpTo?.let { to -> Modifier.clickable(role = Role.Button) { onJump(to) } } ?: Modifier,
+                        style = TrayText, color = if (needsYou) c.warn else c.ink2,
                         maxLines = 1, overflow = TextOverflow.Ellipsis,
                     )
                 }
@@ -136,7 +139,7 @@ internal fun DeskTray(
                 Column(Modifier.fillMaxWidth().heightIn(max = 330.dp).verticalScroll(rememberScrollState()).padding(top = 4.dp, bottom = 6.dp)) {
                     active.forEachIndexed { i, view ->
                         if (i > 0) HorizontalDivider(thickness = 0.5.dp, color = c.hair)
-                        TrayTask(view, { onStop(view.taskId) }, { onDetail(view.taskId) })
+                        TrayTask(view, { onStop(view.taskId) }, { onDetail(view.taskId) }, onJump)
                     }
                 }
             }
@@ -153,7 +156,7 @@ private fun currentStep(view: DeskTaskView): String =
 
 /** 展开后的一件。 */
 @Composable
-private fun TrayTask(view: DeskTaskView, onStop: () -> Unit, onDetail: () -> Unit) {
+private fun TrayTask(view: DeskTaskView, onStop: () -> Unit, onDetail: () -> Unit, onJump: (String) -> Unit) {
     val c = MikaTheme.colors
     val style = deskPhaseStyle(view)
     Column(Modifier.fillMaxWidth().testTag("desk-tray-row").padding(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 6.dp)) {
@@ -171,7 +174,9 @@ private fun TrayTask(view: DeskTaskView, onStop: () -> Unit, onDetail: () -> Uni
             Text(it, Modifier.padding(top = 2.dp), style = MikaType.Hint, color = c.ink3, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
         if (view.steps.isNotEmpty()) {
-            Column(Modifier.padding(top = 8.dp)) {
+            // 等手机座位时点步骤跳到占着手机的那个对话
+            val jump = view.jumpTo?.let { to -> Modifier.clickable(role = Role.Button) { onJump(to) } } ?: Modifier
+            Column(Modifier.padding(top = 8.dp).then(jump)) {
                 view.steps.forEachIndexed { i, step ->
                     val last = i == view.steps.lastIndex
                     val kind = when {

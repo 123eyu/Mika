@@ -12,8 +12,6 @@
     <string name="dev_light_sub">El modelo ligero, más rápido, hace los pasos fáciles; el principal se queda con los difíciles</string>
     <string name="dev_replay">Repetir lo que funcionó la última vez</string>
     <string name="dev_replay_sub">Reproduce rutas guardadas de cosas que ya hizo; si no coinciden, vuelve a dárselo al modelo</string>
-    <string name="dev_parallel">Ejecutar chats en paralelo</string>
-    <string name="dev_parallel_sub">Las tareas de chats distintos tienen cada una su pantalla virtual y se ejecutan a la vez</string>
     <string name="dev_compaction">Resúmenes estructurados en tareas largas</string>
     <string name="dev_compaction_sub">Cuando hay que comprimir muchos pasos, anota objetivo, hechos, progreso y siguiente paso</string>
     <string name="dev_group">Cómo trabaja Mika</string>

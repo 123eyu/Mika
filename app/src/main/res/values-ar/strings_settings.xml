@@ -75,8 +75,8 @@
     <string name="settings_pace_per_app_none">لا تطبيقات مطابقة</string>
     <string name="settings_pace_per_app_pick">اختيار</string>
     <string name="settings_pace_per_app_remove">إزالة (يتبع السرعة العامة)</string>
-    <string name="settings_parallel">المهام المتزامنة</string>
-    <string name="settings_parallel_sub">تُخصّص شاشة افتراضية مستقلة لمهام المحادثات المختلفة</string>
+    <string name="settings_parallel">المهام التي تشغّل الهاتف معاً</string>
+    <string name="settings_parallel_sub">كل مهمة تشغّل التطبيقات تستخدم شاشة افتراضية؛ مهام المحادثة والويب فقط لا تُحتسب</string>
     <plurals name="settings_count_tasks">
         <item quantity="zero">%1$d</item>
         <item quantity="one">%1$d</item>

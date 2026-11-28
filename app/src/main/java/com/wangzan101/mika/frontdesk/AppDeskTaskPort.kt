@@ -52,7 +52,7 @@ interface DeskRun {
  * [startTimeoutMs] 内一直没登记就记成没开始。重开会话时接回的子会话,任务还在的跟着它走;任务已不在的按子会话最后一轮
  * 记下的结局给终态,连结局都没记下(进程中途没了)的直接记成中断([interrupted]),不等登记、也不占并行位置。
  *
- * [runs]/[current] 是任务服务里此刻在跑和排队的任务(排队的按先后),[start] 交给任务服务,[parallelLimit] 是此刻能同时跑几个。
+ * [runs]/[current] 是任务服务里此刻在跑和排队的任务(排队的按先后),[start] 交给任务服务,[parallelLimit] 是此刻能同时跑几个(任务总数上限,不是手机座位数)。
  */
 class AppDeskTaskPort(
     private val conversations: ConversationStore,

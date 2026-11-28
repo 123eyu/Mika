@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -60,7 +59,6 @@ import com.wangzan101.mika.ui.theme.WordmarkWeight
 fun ChatDrawer(
     check: Prerequisites.Check,
     sections: DrawerSections,
-    canSwitch: Boolean,
     /** 搜索框里的字;非空时侧栏进入搜索结果,入口区让位给结果。 */
     query: String = "",
     onQueryChange: (String) -> Unit = {},
@@ -144,7 +142,7 @@ fun ChatDrawer(
             MikaLogo(32.dp, corner = 9.dp)
             Text("Mika", Modifier.weight(1f), style = MikaType.Title.copy(fontWeight = WordmarkWeight), color = c.ink)
             // 新对话放在标题右边;搜索、多选、归档时收起
-            if (!searchActive && !selecting && !archivedView) NewConversationButton(canSwitch, onNew)
+            if (!searchActive && !selecting && !archivedView) NewConversationButton(onNew)
             // 多选从长按菜单进;进去以后这里换成「取消」,返回键同样能退出
             if (selecting) HeaderAction(stringResource(R.string.cancel), "drawer-select-cancel", c.ink2, onExitSelect)
         }
@@ -178,14 +176,6 @@ fun ChatDrawer(
         LazyColumn(Modifier.fillMaxWidth().weight(1f).lazyListScrollbar(list), state = list) {
             if (searchActive) {
                 item("h-search") { SectionLabel(stringResource(R.string.drawer_search_results)) }
-                if (!canSwitch) {
-                    item("search-busy") {
-                        Text(
-                            stringResource(R.string.drawer_busy), Modifier.padding(start = 24.dp, end = 24.dp, bottom = 6.dp),
-                            style = MikaType.Hint, color = c.ink3,
-                        )
-                    }
-                }
                 // 扫正文期间一直提示;标题命中已经列出来时也提示,表示结果还会补全
                 if (search?.searching != false) item("searching") { SearchHint(stringResource(R.string.drawer_searching)) }
                 items(search?.hits.orEmpty(), key = { "s-${it.id}" }) {
@@ -219,7 +209,7 @@ fun ChatDrawer(
                     }
                 }
                 if (showProjectsSection) {
-                    item("h-projects") { ProjectsHeader(enabled = canSwitch, onNewProject = onNewProject) }
+                    item("h-projects") { ProjectsHeader(onNewProject = onNewProject) }
                     sections.projects.forEach { group ->
                         val collapsed = group.project.id in collapsedProjects
                         item("proj-h-${group.project.id}") {
@@ -227,7 +217,6 @@ fun ChatDrawer(
                                 project = group.project,
                                 count = group.rows.size,
                                 collapsed = collapsed,
-                                canCreate = canSwitch,
                                 onToggle = { onToggleProject(group.project.id) },
                                 onNewChat = { onNewInProject(group.project.id) },
                                 onActions = { bounds -> onProjectActions(group.project, bounds) },
@@ -253,20 +242,8 @@ fun ChatDrawer(
                         }
                     }
                 }
-                // 换不了对话时的说明放在第一段存着的对话(置顶或最近)上面
-                val busyNote: LazyListScope.() -> Unit = {
-                    if (!canSwitch) {
-                        item("busy") {
-                            Text(
-                                stringResource(R.string.drawer_busy), Modifier.padding(start = 24.dp, end = 24.dp, bottom = 6.dp),
-                                style = MikaType.Hint, color = c.ink3,
-                            )
-                        }
-                    }
-                }
                 if (sections.pinned.isNotEmpty()) {
                     item("h-pinned") { SectionLabel(stringResource(R.string.drawer_pinned)) }
-                    busyNote()
                     items(sections.pinned, key = { "p-${it.id}" }) {
                         ConversationEntry(
                             it, onOpen, onActions, selecting = selecting, selected = it.id in selected,
@@ -276,7 +253,6 @@ fun ChatDrawer(
                 }
                 if (sections.recent.isNotEmpty()) {
                     item("h-recent") { SectionLabel(stringResource(R.string.drawer_recent)) }
-                    if (sections.pinned.isEmpty()) busyNote()
                     items(sections.recent, key = { "c-${it.id}" }) {
                         ConversationEntry(
                             it, onOpen, onActions, selecting = selecting, selected = it.id in selected,

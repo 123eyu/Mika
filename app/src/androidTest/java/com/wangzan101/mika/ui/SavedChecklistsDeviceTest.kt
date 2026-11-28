@@ -70,7 +70,7 @@ class SavedChecklistsDeviceTest {
 
     private fun show(): ChatViewModel {
         val vm = ChatViewModel(scope, MutableStateFlow(TaskState.Idle), MutableStateFlow(Takeover.Stage.None),
-            actions, conversations, parallelFlag = { false }, sandboxReady = MutableStateFlow(false),
+            actions, conversations, sandboxReady = MutableStateFlow(false),
             io = Dispatchers.Main.immediate)
         compose.runOnUiThread { vm.openConversation("history") }
         compose.setContent {

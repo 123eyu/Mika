@@ -75,7 +75,7 @@ internal object SettingsSearchIndex {
         pageItem(SettingsPage.DuringWork, SettingsFocusKey.WORKSPACE_LIMIT, R.string.settings_workspace_size_limit, listOf(PREFERENCES, R.string.settings_during_work)),
         pageItem(SettingsPage.DuringWork, SettingsFocusKey.TOKEN_BUDGET, R.string.settings_task_token_budget, listOf(PREFERENCES, R.string.settings_during_work)),
         pageItem(SettingsPage.DuringWork, SettingsFocusKey.SHOW_TASK_COST, R.string.settings_show_task_cost, listOf(PREFERENCES, R.string.settings_during_work)),
-        pageItem(SettingsPage.DuringWork, SettingsFocusKey.PARALLEL_TASKS, R.string.settings_parallel, listOf(PREFERENCES, R.string.settings_during_work), SettingsRequirement.ParallelTasks),
+        pageItem(SettingsPage.DuringWork, SettingsFocusKey.PARALLEL_TASKS, R.string.settings_parallel, listOf(PREFERENCES, R.string.settings_during_work)),
         pageItem(SettingsPage.DuringWork, SettingsFocusKey.LOCK_SCREEN_TASKS, R.string.device_local_title, listOf(PREFERENCES, R.string.settings_during_work)),
         pageItem(SettingsPage.DuringWork, SettingsFocusKey.LOCK_SCREEN_CREDENTIAL, R.string.device_access_credential, listOf(PREFERENCES, R.string.settings_during_work)),
         pageItem(SettingsPage.DuringWork, SettingsFocusKey.SELF_CONFIG, R.string.settings_self_config, listOf(PREFERENCES, R.string.settings_during_work)),

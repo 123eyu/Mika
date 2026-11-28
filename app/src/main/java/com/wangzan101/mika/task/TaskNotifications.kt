@@ -84,7 +84,8 @@ internal fun TaskService.progressNotification(run: TaskRun, state: TaskState): N
         .setStyle(Notification.BigTextStyle().bigText(text + warning))
         .setOngoing(true)
         .setOnlyAlertOnce(true)
-        .setContentIntent(openApp(run.conversationId))
+        // 等手机座位时点通知去占着手机的那个对话;状态一变通知重建,拿到座位后回到自己的对话。按钮仍作用于这件任务
+        .setContentIntent(openApp(state.jumpTarget(run.conversationId)))
     if (Build.VERSION.SDK_INT >= 36 && chip != null) {
         b.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE)
         b.setShortCriticalText(chip)

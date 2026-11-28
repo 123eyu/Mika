@@ -46,7 +46,6 @@ import com.wangzan101.mika.ui.theme.MikaType
 @Composable
 internal fun ChatMoreMenu(
     backdrop: GlassBackdrop?,
-    canSwitch: Boolean,
     onNew: () -> Unit,
     onRecords: () -> Unit,
     onTasks: () -> Unit,
@@ -69,7 +68,7 @@ internal fun ChatMoreMenu(
             }
         }
         DropdownMenu(open, { open = false }) {
-            MenuRow(R.string.chat_new, MikaIcons.New, "chat-menu-new", enabled = canSwitch) { open = false; onNew() }
+            MenuRow(R.string.chat_new, MikaIcons.New, "chat-menu-new") { open = false; onNew() }
             MenuRow(R.string.voicecall_records, MikaIcons.Clock, "chat-menu-records") { open = false; onRecords() }
             MenuRow(R.string.chat_menu_tasks, MikaIcons.ListChecks, "chat-menu-tasks") { open = false; onTasks() }
             MenuRow(R.string.voicecall_settings, MikaIcons.Handset, "chat-menu-call-settings") { open = false; onCallSettings() }
@@ -86,21 +85,17 @@ internal fun TopBarIcon(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     tag: String,
-    enabled: Boolean = true,
     badge: Boolean = false,
-    /** 灰掉时点下去的回应(说明为什么现在不能用);不给就照旧不响应。 */
-    onDisabledClick: (() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
     val c = MikaTheme.colors
     Box(
         Modifier.size(width = 44.dp, height = MikaSize.IconButton + 4.dp).clip(TopBarShape)
-            .clickable(enabled = enabled || onDisabledClick != null, role = androidx.compose.ui.semantics.Role.Button, onClickLabel = label,
-                onClick = { if (enabled) onClick() else onDisabledClick?.invoke() })
+            .clickable(role = androidx.compose.ui.semantics.Role.Button, onClickLabel = label, onClick = onClick)
             .testTag(tag),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, label, Modifier.size(MikaSize.Icon), tint = if (enabled) c.ink else c.ink3)
+        Icon(icon, label, Modifier.size(MikaSize.Icon), tint = c.ink)
         if (badge) {
             Box(
                 Modifier.align(Alignment.TopEnd).padding(top = 9.dp, end = 9.dp).size(8.dp)
@@ -111,12 +106,11 @@ internal fun TopBarIcon(
 }
 
 @Composable
-private fun MenuRow(text: Int, icon: androidx.compose.ui.graphics.vector.ImageVector, tag: String, enabled: Boolean = true, onClick: () -> Unit) {
+private fun MenuRow(text: Int, icon: androidx.compose.ui.graphics.vector.ImageVector, tag: String, onClick: () -> Unit) {
     DropdownMenuItem(
         text = { Text(stringResource(text)) },
         leadingIcon = { Icon(icon, null, Modifier.size(18.dp)) },
         onClick = onClick,
-        enabled = enabled,
         modifier = Modifier.testTag(tag),
     )
 }

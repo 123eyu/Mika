@@ -19,9 +19,7 @@ import com.wangzan101.mika.files.ui.LibraryFileHandle
 /** 共用状态:屏上这个对话的界面状态、各对话草稿、在跟的任务、删除中的对话,以及各块都要用的草稿与对话小工具。 */
 internal class ChatSession(private val vm: ChatViewModel) {
     private val store = vm.store
-    private val parallelFlag = vm.parallelFlag
     private val shownTask = vm.shownTask
-    private val activeConversations = vm.activeConversations
     private val runNotes = vm.runNotes
     private val summarizing = vm.summarizing
     private val sharedDrafts = vm.sharedDrafts
@@ -109,28 +107,9 @@ internal class ChatSession(private val vm: ChatViewModel) {
     val parked = mutableMapOf<String, Parked>()
     val parkedJobs = mutableMapOf<String, Job>()
 
-    /** 开关在没有任务时重读,开始任务、换对话时也重读([refreshParallel]):这里在跟的任务中途改开关不改这一轮的行为。 */
-    var parallelOn = parallelFlag()
-
-    fun parallel(): Boolean {
-        if (liveIndex < 0 && activeConversations.value.isEmpty()) parallelOn = parallelFlag()
-        return parallelOn
-    }
-
-    /**
-     * 开始任务、换对话时重读开关(这个界面没在跟任务时):设置里刚改的开关不用重建界面就生效,
-     * 和服务每次开始任务时重读一致。别的对话的任务照旧跑,它们在服务里按各自开始时的开关。
-     */
-    fun refreshParallel() {
-        if (liveIndex < 0) parallelOn = parallelFlag()
-    }
-
     /** 正在跟踪的任务在 exchanges 里的位置;-1 表示没有。 */
     var liveIndex = -1
     var lingerJob: Job? = null
-
-    /** 排在服务收尾后面、还没交给服务的开始;在这期间点停止就直接作废它。 */
-    var pendingStart: Job? = null
 
     /** 正在跟踪的任务开过屏;一旦开过,到任务结束(含完成后停留的那几秒)都显示画中画。 */
     var screenSeen = false
@@ -152,8 +131,8 @@ internal class ChatSession(private val vm: ChatViewModel) {
         return if (st.summarizing == on) ex else ex.copy(status = st.copy(summarizing = on))
     }
 
-    /** 服务对外的那几项(接管进度、有没有屏、导出的文件)此刻是不是屏上这个对话的任务的:并行时看显示中的是谁。 */
-    fun ownTask() = !parallel() || shownTask.value?.first == _ui.value.conversationId
+    /** 服务对外的那几项(接管进度、有没有屏、导出的文件)此刻是不是屏上这个对话的任务的:看显示中的是谁。 */
+    fun ownTask() = shownTask.value?.first == _ui.value.conversationId
 
     fun withNotes(ex: Exchange, notes: Map<String, RunNotes>): Exchange {
         val n = ex.runId?.let(notes::get) ?: return ex

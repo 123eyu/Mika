@@ -22,7 +22,6 @@ internal class ChatConversationOps(private val vm: ChatViewModel, private val se
     private val deleting = session.deleting
     private var liveIndex by session::liveIndex
     private var lingerJob by session::lingerJob
-    private var pendingStart by session::pendingStart
     private var screenSeen by session::screenSeen
     private var pipClosed by session::pipClosed
     private val _deleteBatch = session._deleteBatch
@@ -40,12 +39,9 @@ internal class ChatConversationOps(private val vm: ChatViewModel, private val se
     private val workspaceResolver = vm.workspaceResolver
 
     /**
-     * 切到某个对话(并行时任务在跑也能切):载入它的历史;它有任务在跑就让服务显示那个任务,并接上它此刻的状态。
-     * 开关关着时同 [openConversation]。
+     * 切到某个对话(任务在跑也能切):载入它的历史;它有任务在跑就让服务显示那个任务,并接上它此刻的状态。
      */
     fun switchTo(conversationId: String) {
-        session.refreshParallel()
-        if (!session.parallel()) return openConversation(conversationId)
         if (conversationId == _ui.value.conversationId) return
         if (_ui.value.conversationId == null) vm.clearUnnumberedMainChoice()
         vm.drafting.cancelPendingSharedDraft()
@@ -66,7 +62,6 @@ internal class ChatConversationOps(private val vm: ChatViewModel, private val se
     fun openWorkflowConversation(conversationId: String) {
         if (conversationId == _ui.value.conversationId) { vm.live.refresh(); return }
         if (_ui.value.conversationId == null) vm.clearUnnumberedMainChoice()
-        session.refreshParallel()
         vm.drafting.cancelPendingSharedDraft()
         session.keepDraft()
         lingerJob?.cancel()
@@ -86,7 +81,7 @@ internal class ChatConversationOps(private val vm: ChatViewModel, private val se
 
     /**
      * 打开某个对话并跳到指定消息。已经在这个对话里时只设跳转,不重新载入;
-     * 任务进行中且没开并行时打不开,跳转也不会留下,调用方可以用 [ChatUi.conversationId] 判断是否成功。
+     * 打不开时(比如对话正在删)跳转也不会留下,调用方可以用 [ChatUi.conversationId] 判断是否成功。
      */
     fun openConversationAt(id: String, target: ChatTarget) {
         if (_ui.value.conversationId != id) openConversation(id)
@@ -138,56 +133,29 @@ internal class ChatConversationOps(private val vm: ChatViewModel, private val se
         }
     }
 
-    /** 切到某个对话;任务在跑时不切。 */
+    /** 切到某个对话;Mika 办事用的子对话换成它所属的那条聊天。 */
     fun openConversation(requested: String) {
         // Mika 办一件事用的子对话不给用户看(通知、小画面、旧链接都可能指向它):打开它所属的那条聊天
         val id = store.deskParent(requested) ?: requested
         if (_ui.value.conversationId == id) return
         if (_ui.value.conversationId == null) vm.clearUnnumberedMainChoice()
-        session.refreshParallel()
-        if (session.parallel()) return switchTo(id)
-        if (session.busy()) return
-        vm.drafting.cancelPendingSharedDraft()
-        session.keepDraft()
-        val past = session.saved(id)
-        liveIndex = -1
-        _ui.update {
-            session.restoreDraft(it.rebuildForConversation(conversationId = id, exchanges = past, takeoverStage = it.takeoverStage, projectId = session.projectFor(id)))
-        }
-        vm.refreshMainModel()
-        session.markCurrent(CurrentChat.Open(id))
-        // 这个对话的任务是别处开始的(悬浮胶囊、定时任务):打开就接上它
-        if (id in activeConversations.value) vm.live.follow(id) else {
-            vm.live.unpark(id)
-            actions.drainFollowUps(id)
-        }
+        switchTo(id)
     }
 
     fun newConversation(projectId: String? = null) {
         if (_ui.value.conversationId == null) vm.clearUnnumberedMainChoice()
         val validProject = projectId?.takeIf { projectStore == null || projectStore.get(it) != null }
-        session.refreshParallel()
-        if (session.parallel()) {
-            vm.drafting.cancelPendingSharedDraft()
-            session.keepDraft()
-            // 别的任务可能还在跑:先给新对话编号,它的状态就不会被当成这个对话的
-            lingerJob?.cancel()
-            vm.live.parkLive()
-            liveIndex = -1
-            val fresh = store.newConversation()
-            workspaceResolver?.setDraftProject(fresh, validProject)
-            _ui.update { it.rebuildForConversation(conversationId = fresh, projectId = validProject) }
-            vm.refreshMainModel()
-            // 还没说过话:胶囊上是一张新对话卡片(编号等说出来再定,见 begin)
-            session.markCurrent(CurrentChat.Fresh)
-            return
-        }
-        if (session.busy()) return
         vm.drafting.cancelPendingSharedDraft()
         session.keepDraft()
+        // 别的任务可能还在跑:先给新对话编号,它的状态就不会被当成这个对话的
+        lingerJob?.cancel()
+        vm.live.parkLive()
         liveIndex = -1
-        _ui.update { it.rebuildForConversation(conversationId = null, takeoverStage = it.takeoverStage, projectId = validProject) }
+        val fresh = store.newConversation()
+        workspaceResolver?.setDraftProject(fresh, validProject)
+        _ui.update { it.rebuildForConversation(conversationId = fresh, projectId = validProject) }
         vm.refreshMainModel()
+        // 还没说过话:胶囊上是一张新对话卡片(编号等说出来再定,见 begin)
         session.markCurrent(CurrentChat.Fresh)
     }
 
@@ -273,10 +241,7 @@ internal class ChatConversationOps(private val vm: ChatViewModel, private val se
         if (id in _deleted.value || id in deleting) return false
         if (id in activeConversations.value) return false
         val current = _ui.value.conversationId == id
-        if (current) {
-            session.refreshParallel()
-            if (session.busy()) return false
-        }
+        if (current && session.busy()) return false
         val ok = runCatching { store.setArchived(id, true, clock()) }.getOrDefault(false)
         // 先归档再换:换到新对话时侧栏重读,原来那个已经不在列表里了
         if (ok && current) newConversation()
@@ -308,19 +273,17 @@ internal class ChatConversationOps(private val vm: ChatViewModel, private val se
         }
     }
 
-    /** 屏上的对话被删了:不再跟它的任务(还没交给服务的开始直接作废),换成新的空对话。 */
+    /** 屏上的对话被删了:不再跟它的任务,换成新的空对话。 */
     private fun startOver(id: String) {
         draftStateChanged = true
         vm.drafting.cancelPendingSharedDraft()
         vm.drafting.discardSharedDraft()
         lingerJob?.cancel()
-        pendingStart?.cancel()
-        pendingStart = null
         vm.live.unpark(id)
         liveIndex = -1
         screenSeen = false
         pipClosed = false
-        val fresh = if (session.parallel()) store.newConversation() else null
+        val fresh = store.newConversation()
         _ui.update { it.rebuildForConversation(conversationId = fresh) }
         vm.refreshMainModel()
         // 屏上换成了一个新的空对话:胶囊不再接着删掉的那个

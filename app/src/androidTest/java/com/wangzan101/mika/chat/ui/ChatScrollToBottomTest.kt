@@ -62,15 +62,18 @@ class ChatScrollToBottomTest {
     }
 
     private fun vm(
-        taskState: MutableStateFlow<TaskState> = MutableStateFlow(TaskState.Idle),
+        shownTask: MutableStateFlow<Pair<String, TaskState>?> = MutableStateFlow(null),
+        activeConversations: MutableStateFlow<List<String>> = MutableStateFlow(emptyList()),
         screenOpen: MutableStateFlow<Boolean> = MutableStateFlow(false),
     ) = ChatViewModel(
         CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
-        taskState,
+        MutableStateFlow(TaskState.Idle),
         MutableStateFlow(Takeover.Stage.None),
         actions,
         store,
         screenOpen = screenOpen,
+        shownTask = shownTask,
+        activeConversations = activeConversations,
         io = Dispatchers.Main.immediate,
     )
 
@@ -171,14 +174,19 @@ class ChatScrollToBottomTest {
         for (i in 1..15) {
             store.append("pip", Turn("历史步骤 $i", "历史结果 $i", "succeeded"))
         }
-        val taskState = MutableStateFlow<TaskState>(TaskState.Idle)
+        val shownTask = MutableStateFlow<Pair<String, TaskState>?>(null)
+        val active = MutableStateFlow<List<String>>(emptyList())
         val screenOpen = MutableStateFlow(false)
-        val vm = vm(taskState, screenOpen)
+        val vm = vm(shownTask, active, screenOpen)
         compose.runOnUiThread {
             vm.openConversation("pip")
             vm.send("正在执行的任务", Prerequisites.Check(emptyList()))
         }
-        taskState.value = TaskState.Running(step = 1, note = "正在操作手机")
+        // 和服务一样:任务登记进任务列表,带着它所在的对话报状态
+        compose.runOnUiThread {
+            active.value = listOf("pip")
+            shownTask.value = "pip" to TaskState.Running(step = 1, note = "正在操作手机")
+        }
         screenOpen.value = true
         show(vm, reduceMotion = true)
 

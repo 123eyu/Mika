@@ -30,6 +30,18 @@ class DeskEventTest {
     }
 
     @Test
+    fun seatWaitThenRunningIsNotStartedAgain() {
+        val seat = TaskState.Held(GateReason.waitingSeat("等「买菜」用完手机", "c2"))
+        assertNull(classify(running("打开设置"), seat))
+        assertNull(classify(seat, running("打开设置")))
+    }
+
+    @Test
+    fun seatWaitIsStillRunningPhase() {
+        assertEquals(DeskTaskPhase.Running, deskPhaseOf(TaskState.Held(GateReason.waitingSeat("等另一个任务用完手机", null))))
+    }
+
+    @Test
     fun narrationChangeIsCleanedProgress() {
         val event = classify(running("打开设置"), running("点了「张三的生日会」 [120,340] 那一行"))
         assertEquals(DeskEvent.Progress("t1", "点了 那一行"), event)

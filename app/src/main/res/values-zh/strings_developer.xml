@@ -12,8 +12,6 @@
     <string name="dev_light_sub">容易的步骤让更快的轻量模型来做,难的仍由主模型做</string>
     <string name="dev_replay">照着上次的做法做</string>
     <string name="dev_replay_sub">做过的事按记住的操作路线快速重做,对不上就交回模型</string>
-    <string name="dev_parallel">不同对话同时进行</string>
-    <string name="dev_parallel_sub">不同对话的任务各占一块虚拟屏,一起做</string>
     <string name="dev_compaction">长任务的摘要分条写</string>
     <string name="dev_compaction_sub">步骤多了要压缩时,按目标、事实、进展、下一步记下来</string>
     <string name="dev_group">做事方式</string>

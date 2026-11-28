@@ -3,9 +3,8 @@
     <string name="notif_channel_prepare">背景準備</string>
     <string name="notif_preparing">Mika 正在準備</string>
     <string name="notif_result_title">Mika 任務結果</string>
-    <string name="parallel_second_display_failed">第二塊虛擬螢幕沒能建起來,這次執行期間一次只進行一個任務</string>
-    <string name="parallel_needs_14">Android 14 以上才支援同時進行多個任務</string>
-    <string name="parallel_low_ram">這臺手機記憶體較小,一次只進行一個任務</string>
+    <string name="parallel_needs_14">同時操作手機需要 Android 14 或更新的系統</string>
+    <string name="parallel_low_ram">這臺手機記憶體較小，一次只操作一個 App</string>
     <string name="skill_suspended">這項技能最近不靈,先停用了:%1$s</string>
     <string name="skill_verified">這項技能用它辦成了事，轉為正式:%1$s</string>
     <string name="skill_learned">Mika 學會了一項技能:%1$s</string>
@@ -30,6 +29,8 @@
     <string name="fail_model_untested">主模型在 %1$s 還沒測試通過。去設定 › 模型 › %1$s 點「重新測試」查一下它能不能用。</string>
     <string name="fail_no_web">裝置沒有可用的網頁能力，條件檢查無法執行</string>
     <string name="task_waiting_display">排隊中:等另一個任務做完再開始</string>
+    <string name="task_waiting_seat">等「%1$s」用完手機</string>
+    <string name="task_waiting_seat_other">等另一個任務用完手機</string>
     <string name="task_no_phone_helper">手機操作還沒準備好:請在 Mika 裡完成「設定手機操作」。網頁和檔案類的事不受影響。</string>
     <string name="task_no_a11y">Mika 的無障礙服務沒有開啟:請在系統設定的無障礙裡開啟 Mika。</string>
     <string name="task_a11y_not_running">Mika 的無障礙服務已開啟，但 Android 尚未連接它。請在系統設定的無障礙裡將 Mika 關閉後重新開啟；如果 Android 阻止開啟，請先在 Mika 的應用程式資訊裡允許受限制的設定。</string>

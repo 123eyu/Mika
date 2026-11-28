@@ -23,14 +23,14 @@ internal fun TaskService.noteTaskUnlock() = taskRelock.unlocked(
     com.wangzan101.mika.cap.phone.a11y.ScreenAccessibility.mainInteractionCount())
 
 /**
- * 任务收尾时调用([ignore] 是正在收尾的这个)。还有任务在跑或排队就等;都结束了才裁决:
+ * 任务收尾时调用([ignore] 是正在收尾的这个)。还有别的任务占着或等着手机座位就等(只聊天的不用等);都放开了才裁决:
  * 已锁→了结;不能锁(无障碍不在、或还留着一页)→警告;等待期里用户动了主屏→等一段空闲再裁;
  * 否则经全局动作回锁,并轮询等系统确认,两次不确认就换成常驻警告。
  */
 internal suspend fun TaskService.finishTaskRelock(ignore: TaskRun? = null) = relockMutex.withLock {
     val keyguard = getSystemService(android.app.KeyguardManager::class.java)
     fun count() = com.wangzan101.mika.cap.phone.a11y.ScreenAccessibility.mainInteractionCount()
-    fun runsRemain() = center.runs().any { it !== ignore }
+    fun runsRemain() = center.phoneUsers(ignore).isNotEmpty()
     fun accessibility() = com.wangzan101.mika.cap.phone.a11y.ScreenAccessibility.instance.value
     fun decision() = taskRelock.decide(
         runsRemain = runsRemain(), locked = systemLockConfirmed(keyguard), interactions = count(),

@@ -69,8 +69,8 @@
     <string name="settings_pace_per_app_none">No hay apps que coincidan</string>
     <string name="settings_pace_per_app_pick">Elegir</string>
     <string name="settings_pace_per_app_remove">Quitar (seguir el ritmo global)</string>
-    <string name="settings_parallel">Tareas a la vez</string>
-    <string name="settings_parallel_sub">Las tareas de chats distintos tienen cada una su propia pantalla virtual</string>
+    <string name="settings_parallel">Tareas con el teléfono a la vez</string>
+    <string name="settings_parallel_sub">Las tareas que manejan apps usan cada una una pantalla virtual; las de solo chat o web no cuentan</string>
     <plurals name="settings_count_tasks">
         <item quantity="one">%1$d</item>
         <item quantity="many">%1$d</item>

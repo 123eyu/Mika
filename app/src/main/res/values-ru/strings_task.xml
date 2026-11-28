@@ -3,9 +3,8 @@
     <string name="notif_channel_prepare">Фоновая настройка</string>
     <string name="notif_preparing">Mika готовится к работе</string>
     <string name="notif_result_title">Результат задачи Mika</string>
-    <string name="parallel_second_display_failed">Не удалось создать второй виртуальный экран, поэтому пока выполняется только одна задача за раз</string>
-    <string name="parallel_needs_14">Для одновременного выполнения нескольких задач нужен Android 14 или новее</string>
-    <string name="parallel_low_ram">У этого телефона мало памяти, поэтому задачи выполняются по одной</string>
+    <string name="parallel_needs_14">Чтобы управлять телефоном для нескольких задач одновременно, нужен Android 14 или новее</string>
+    <string name="parallel_low_ram">У этого телефона мало памяти, поэтому приложения управляются по одному</string>
     <string name="skill_suspended">Этот навык в последнее время не срабатывал, поэтому он приостановлен: %1$s</string>
     <string name="skill_verified">Навык сработал и теперь используется постоянно: %1$s</string>
     <string name="skill_learned">Mika выучила навык: %1$s</string>
@@ -33,6 +32,8 @@
     <string name="fail_model_untested">Основная модель ещё не прошла проверку у провайдера %1$s. Откройте «Настройки» › «Модели» › %1$s и нажмите «Проверить снова».</string>
     <string name="fail_no_web">На этом устройстве нет доступа к интернету, поэтому проверить условие нельзя</string>
     <string name="task_waiting_display">В очереди: начнётся после завершения другой задачи</string>
+    <string name="task_waiting_seat">Ждём, пока «%1$s» закончит работу с телефоном</string>
+    <string name="task_waiting_seat_other">Ждём, пока другая задача закончит работу с телефоном</string>
     <string name="task_no_phone_helper">Управление телефоном не готово. Завершите «Настройку управления телефоном» в Mika. Задачи с сайтами и файлами это не затрагивает.</string>
     <string name="task_no_a11y">Служба специальных возможностей Mika выключена. Включите Mika в разделе «Специальные возможности» системных настроек.</string>
     <string name="task_a11y_not_running">Служба специальных возможностей Mika включена, но Android ещё не подключил её. Выключите Mika и включите снова в разделе «Специальные возможности» системных настроек. Если Android блокирует включение, сначала разрешите ограниченные настройки в сведениях о Mika.</string>

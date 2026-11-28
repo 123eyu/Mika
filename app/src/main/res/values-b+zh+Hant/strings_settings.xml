@@ -65,8 +65,8 @@
     <string name="settings_pace_per_app_none">沒有相符的 App</string>
     <string name="settings_pace_per_app_pick">選它</string>
     <string name="settings_pace_per_app_remove">刪除（跟隨全域檔位）</string>
-    <string name="settings_parallel">同時進行的任務</string>
-    <string name="settings_parallel_sub">不同對話的任務各佔一塊虛擬螢幕</string>
+    <string name="settings_parallel">同時操作手機的任務</string>
+    <string name="settings_parallel_sub">操作 App 的任務各用一塊虛擬螢幕；只聊天、查網頁的任務不佔</string>
     <plurals name="settings_count_tasks">
         <item quantity="other">%1$d 個</item>
     </plurals>

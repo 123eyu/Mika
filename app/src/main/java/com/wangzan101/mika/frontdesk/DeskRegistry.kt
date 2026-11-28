@@ -52,7 +52,7 @@ class DeskRegistry(
             app.taskState.runs.map { list -> list.map { TaskRunDesk(app, it) } },
             { app.taskState.runs.value.map { TaskRunDesk(app, it) } },
             { words, child, brief -> TaskService.start(app, words, child, brief = brief) },
-            // 任务服务每次决定开始还是排队时算出并发布的上限,两边看的是同一个数。
+            // 任务服务每次决定开始还是排队时算出并发布的任务总数上限,两边看的是同一个数(手机座位另算)。
             { app.taskState.parallelLimit.value.max },
             scope,
             { tr(R.string.desk_task_not_started) },

@@ -382,7 +382,6 @@ fun ChatScreen(
     val context = LocalContext.current
 
     val c = MikaTheme.colors
-    val busyHint = rememberBusyHint()
     val backdrop = rememberGlassBackdrop()
     /** 长按了的那条消息;菜单开着(收起的动画放完才清掉)。 */
     var menu by remember { mutableStateOf<MessageTarget?>(null) }
@@ -494,8 +493,7 @@ fun ChatScreen(
                             if (!adaptive.hasNavigation || screenDocked) {
                                 TopBarIcon(MikaIcons.Menu, stringResource(R.string.chat_menu), "chat-menu", badge = others.isNotEmpty(), onClick = onOpenDrawer)
                             }
-                            TopBarIcon(MikaIcons.New, stringResource(R.string.chat_new), "chat-new", enabled = vm.canSwitch(),
-                                onDisabledClick = busyHint) { vm.newConversation() }
+                            TopBarIcon(MikaIcons.New, stringResource(R.string.chat_new), "chat-new") { vm.newConversation() }
                         }
                     }
                     GlassSurface(backdrop = backdrop, modifier = Modifier.align(Alignment.Center), shape = TopBarShape) {
@@ -512,7 +510,7 @@ fun ChatScreen(
                                 TopBarIcon(MikaIcons.Handset, stringResource(R.string.voicecall_menu), "chat-call", onClick = onVoiceCall)
                             }
                             ChatMoreMenu(
-                                backdrop, canSwitch = vm.canSwitch(),
+                                backdrop,
                                 onNew = { vm.newConversation() },
                                 onRecords = { showRecords = true },
                                 onTasks = { showTasks = true },
@@ -595,6 +593,7 @@ fun ChatScreen(
             deskTasks = ui.deskTasks,
             onStopTask = vm::cancelDeskTask,
             onTaskDetail = openDeskTask,
+            onTaskJump = vm::openConversation,
         )
 
         val pipOccupiesCorner = !screenDocked && pip.visible && pip.mode != PipMode.Done

@@ -42,7 +42,8 @@ class KeepAwake(
         when (state) {
             is TaskState.Running -> hold()
             // 排在别的任务后面等虚拟屏:还在干活、不用你处理,照样持有;
-            // 宽限后放开的话,那个任务一结束、放开它那份,屏幕就可能当场熄掉,接着建屏开干时只能等解锁
+            // 宽限后放开的话,那个任务一结束、放开它那份,屏幕就可能当场熄掉,接着建屏开干时只能等解锁。
+            // 等手机座位不算:等多久没准(占座的可能正等你回话),不替别的任务撑着屏幕;拿到座位后熄屏走正常的解锁
             is TaskState.Held -> if (state.reason.queued) hold() else releaseLater()
             TaskState.Idle, is TaskState.Succeeded, is TaskState.Failed, TaskState.Cancelled -> if (keepThroughEnd) hold() else release()
             else -> releaseLater()

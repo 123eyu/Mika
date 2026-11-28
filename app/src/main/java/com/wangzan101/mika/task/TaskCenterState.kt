@@ -80,13 +80,9 @@ class TaskCenterState {
     fun run(conversationId: String): TaskRun? = _runs.value.firstOrNull { it.conversationId == conversationId }
     fun show(conversationId: String) { run(conversationId)?.show() }
 
-    @Volatile var secondDisplayFailed = false
+    /** 任务总数上限(不是手机座位数),任务服务每次决定开始还是排队时写入;前台据此预判派出的活开始还是排队。 */
     val _parallelLimit = MutableStateFlow(ParallelLimit(1, null))
     val parallelLimit: StateFlow<ParallelLimit> = _parallelLimit.asStateFlow()
-    fun markSecondDisplayFailed() {
-        secondDisplayFailed = true
-        _parallelLimit.value = ParallelLimit(1, ParallelCapability.SECOND_DISPLAY_FAILED)
-    }
 
     val _state = MutableStateFlow<TaskState>(TaskState.Idle)
     val state: StateFlow<TaskState> = _state.asStateFlow()

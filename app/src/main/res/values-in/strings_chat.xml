@@ -42,7 +42,6 @@
     <string name="chat_working_on">Bekerja di %1$s</string>
     <string name="chat_working">Bekerja</string>
     <string name="share_draft_failed">Konten yang dibagikan tidak dapat ditambahkan ke percakapan</string>
-    <string name="chat_wait_previous_task">Dimulai setelah tugas sebelumnya selesai</string>
     <string name="chat_wait_unlock">Menunggu Anda membuka kunci</string>
     <string name="chat_waiting_for_you">Menunggu Anda</string>
     <string name="chat_paused">Dijeda</string>
@@ -86,7 +85,6 @@
     <string name="memory_and_skills">Memori &amp; keterampilan</string>
     <string name="drawer_browser">Browser</string>
     <string name="drawer_recent">Terbaru</string>
-    <string name="drawer_busy">Ada tugas yang sedang berjalan. Anda bisa berpindah obrolan setelah selesai.</string>
     <string name="drawer_delete_title">Hapus obrolan ini?</string>
     <string name="drawer_delete_body">“%1$s” dan berkas di dalamnya akan dihapus.</string>
     <string name="drawer_delete_running">Tugasnya yang sedang berjalan akan dihentikan.</string>

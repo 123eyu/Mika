@@ -79,7 +79,7 @@ class ChatCopyTest {
         val current = CurrentConversation("a", running = true, title = "附近的川菜", subtitle = "正在操作外卖")
         val s = drawerSections(
             all, current, others = listOf("c", "d"), otherTitle = { if (it == "d") "第二个任务" else null },
-            canSwitch = true, now = now, zone = zone,
+            now = now, zone = zone,
         )
         assertEquals(listOf("a", "c", "d"), s.running.map { it.id })
         assertEquals(listOf("附近的川菜", "PDF 要点整理", "第二个任务"), s.running.map { it.title })
@@ -98,7 +98,7 @@ class ChatCopyTest {
             ConversationSummary("d", "四", 10L, pinnedAt = 200L),
             ConversationSummary("e", "五", 5L, pinnedAt = 300L),
         )
-        val s = drawerSections(all, CurrentConversation("a", false, "一", ""), others = listOf("e"), { null }, canSwitch = true, now = 0L, zone = zone)
+        val s = drawerSections(all, CurrentConversation("a", false, "一", ""), others = listOf("e"), { null }, now = 0L, zone = zone)
         assertEquals(listOf("e"), s.running.map { it.id })
         assertTrue(s.running.single().pinned)
         assertEquals(listOf("d", "b"), s.pinned.map { it.id })
@@ -106,7 +106,7 @@ class ChatCopyTest {
         assertEquals(listOf("a", "c"), s.recent.map { it.id })
         assertTrue(s.recent.none { it.pinned })
         // 取消置顶:回到「最近」里按改动时间排的位置
-        val unpinned = drawerSections(all.map { if (it.id == "b") it.copy(pinnedAt = null) else it }, CurrentConversation("a", false, "一", ""), emptyList(), { null }, true, 0L, zone)
+        val unpinned = drawerSections(all.map { if (it.id == "b") it.copy(pinnedAt = null) else it }, CurrentConversation("a", false, "一", ""), emptyList(), { null }, 0L, zone)
         assertEquals(listOf("e", "d"), unpinned.pinned.map { it.id })
         assertEquals(listOf("a", "b", "c"), unpinned.recent.map { it.id })
     }
@@ -115,7 +115,7 @@ class ChatCopyTest {
     @Test fun drawerMarksConversationsStartedFromAPage() {
         val page = com.wangzan101.mika.chat.PageOrigin("https://shop.example.com/s?k=1", "shop.example.com", "搜索")
         val all = listOf(ConversationSummary("a", "一", 0L, page = page), ConversationSummary("b", "二", 0L), ConversationSummary("c", "三", 0L, page = page))
-        val s = drawerSections(all, CurrentConversation("x", false, "", ""), others = listOf("c"), { null }, canSwitch = true, now = 0L, zone = zone)
+        val s = drawerSections(all, CurrentConversation("x", false, "", ""), others = listOf("c"), { null }, now = 0L, zone = zone)
         assertEquals(listOf("shop.example.com", null), s.recent.map { it.site })
         assertEquals("shop.example.com", s.running.single().site)
     }
@@ -124,18 +124,13 @@ class ChatCopyTest {
     @Test fun drawerMarksBranchedConversations() {
         val origin = BranchOrigin("parent", 1, afterTurn = true, at = 5L)
         val all = listOf(ConversationSummary("a", "一", 0L, branchOf = origin), ConversationSummary("b", "二", 0L))
-        val s = drawerSections(all, CurrentConversation("x", false, "", ""), emptyList(), { null }, canSwitch = true, now = 0L, zone = zone)
+        val s = drawerSections(all, CurrentConversation("x", false, "", ""), emptyList(), { null }, now = 0L, zone = zone)
         assertEquals(listOf(true, false), s.recent.map { it.branch })
     }
 
-    /** 任务进行中、没开并行:只有当前对话能点。 */
-    @Test fun drawerLocksOtherConversationsWhileBusy() {
-        val all = listOf(ConversationSummary("a", "一", 0L), ConversationSummary("b", "二", 0L))
-        val s = drawerSections(all, CurrentConversation("a", false, "一", ""), emptyList(), { null }, canSwitch = false, now = 0L, zone = zone)
-        assertEquals(listOf(true, false), s.recent.map { it.enabled })
-        assertEquals(listOf(true, false), s.recent.map { it.current })
-        // 当前对话还没存进列表时(刚发出第一句)也列在进行中
-        val fresh = drawerSections(emptyList(), CurrentConversation(null, true, "", "正在处理"), emptyList(), { null }, false, 0L, zone)
+    /** 当前对话还没存进列表时(刚发出第一句)也列在进行中,能点。 */
+    @Test fun drawerListsUnsavedCurrentConversationAsRunning() {
+        val fresh = drawerSections(emptyList(), CurrentConversation(null, true, "", "正在处理"), emptyList(), { null }, 0L, zone)
         assertEquals("新对话", fresh.running.single().title)
         assertTrue(fresh.running.single().enabled)
     }
@@ -148,18 +143,18 @@ class ChatCopyTest {
             ConversationSummary("c", "三", 10L, archivedAt = 6L),
             ConversationSummary("d", "四", 5L, archivedAt = 7L),
         )
-        val s = drawerSections(all, CurrentConversation("a", false, "一", ""), others = listOf("d"), { null }, canSwitch = true, now = 0L, zone = zone)
+        val s = drawerSections(all, CurrentConversation("a", false, "一", ""), others = listOf("d"), { null }, now = 0L, zone = zone)
         assertEquals(listOf("d"), s.running.map { it.id })
         assertTrue(s.running.single().archived)
         assertEquals(listOf("a"), s.recent.map { it.id })
         assertTrue(s.recent.none { it.archived })
         // 当前看的就是归档的那个:留着,不然不知道自己在哪
-        val cur = drawerSections(all, CurrentConversation("b", false, "二", ""), emptyList(), { null }, canSwitch = true, now = 0L, zone = zone)
+        val cur = drawerSections(all, CurrentConversation("b", false, "二", ""), emptyList(), { null }, now = 0L, zone = zone)
         assertEquals(listOf("a", "b"), cur.recent.map { it.id })
         assertTrue(cur.recent.last().archived)
         assertTrue(cur.recent.last().current)
         // 没归档时一条不少
-        val plain = drawerSections(all.map { it.copy(archivedAt = null) }, CurrentConversation("a", false, "一", ""), emptyList(), { null }, true, 0L, zone)
+        val plain = drawerSections(all.map { it.copy(archivedAt = null) }, CurrentConversation("a", false, "一", ""), emptyList(), { null }, 0L, zone)
         assertEquals(listOf("a", "b", "c", "d"), plain.recent.map { it.id })
     }
 
@@ -285,7 +280,6 @@ class ChatCopyTest {
             CurrentConversation(null, false, "", ""),
             emptyList(),
             { null },
-            canSwitch = true,
             now = 0L,
             zone = zone,
             projects = listOf(p1, p2),

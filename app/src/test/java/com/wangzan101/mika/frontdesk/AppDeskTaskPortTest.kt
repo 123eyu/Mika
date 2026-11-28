@@ -82,6 +82,13 @@ class AppDeskTaskPortTest {
     }
 
     // 刚派出、服务还没登记的也占着位置,接连派两件不会都当成开始了。
+    // 上限是任务总数(不是手机座位数):已有一个在跑时,第二件照样预判为开始。
+    @Test fun startedWhileUnderTaskTotal() = runTest {
+        val rig = Rig(this, limit = com.wangzan101.mika.task.TaskCapacity.TOTAL)
+        rig.runs.value = listOf(FakeRun("other", TaskState.Running(1, "在做")))
+        assertTrue(rig.port.dispatch("查天气", "", "p") is DispatchOutcome.Started)
+    }
+
     @Test fun unregisteredDispatchCountsTowardLimit() = runTest {
         val rig = Rig(this, limit = 1)
         assertTrue(rig.port.dispatch("查天气", "", "p") is DispatchOutcome.Started)

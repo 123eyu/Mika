@@ -8,7 +8,6 @@ import com.wangzan101.mika.cap.sandbox.ShareExporter
 import com.wangzan101.mika.cap.sandbox.SandboxState
 import com.wangzan101.mika.cap.sandbox.SandboxDirs
 import com.wangzan101.mika.cap.sandbox.WorkspaceKey
-import com.wangzan101.mika.core.agent.SpeedFlags
 import com.wangzan101.mika.core.cap.sandbox.SandboxStatus
 import com.wangzan101.mika.core.model.ChatModel
 import com.wangzan101.mika.core.model.Message
@@ -49,7 +48,6 @@ import com.wangzan101.mika.cap.phone.a11y.DeviceSupport.SETTINGS
 import com.wangzan101.mika.cap.phone.a11y.DeviceSupport.pollUntil
 import com.wangzan101.mika.cap.phone.a11y.DeviceSupport.sh
 import com.wangzan101.mika.core.agent.TaskState
-import com.wangzan101.mika.settings.FeatureFlags
 import com.wangzan101.mika.settings.Prerequisites
 import com.wangzan101.mika.task.ScriptedModel
 import com.wangzan101.mika.task.TaskService
@@ -85,7 +83,6 @@ class ChatScreenDeviceTest {
     private val model = ScriptedModel().apply { intent = "ACT" }
     private val vm get() = (context.applicationContext as MikaApp).chat
     private val anyway = Prerequisites.Check(emptyList())
-    private var savedSpeed: SpeedFlags? = null
 
     @Before
     fun setUp() {
@@ -99,8 +96,6 @@ class ChatScreenDeviceTest {
         // 界面状态是整个进程共用的:等上一个测试的任务全部收尾,再换成新对话,免得接上它的结束状态
         DeviceTaskState.runs.value.forEach { it.cancel() }
         pollUntil(20_000) { DeviceTaskState.busy.value.takeIf { !it } }
-        // 并行开关是持久设置,别的测试(或中途崩掉的)可能留着 true;每个测试自己决定,默认关
-        FeatureFlags.get(context).let { f -> savedSpeed = f.speedFlags(); f.setSpeed(savedSpeed!!.copy(parallelTasks = false)) }
         // 对话页还挂着上一个对话的结束状态时 newConversation 会被当成「忙」而不执行:等它回到空闲,并确认真换成了空对话
         assertNotNull("composer never went idle", pollUntil(20_000) { true.takeIf { !vm.busy() } })
         compose.runOnUiThread { vm.newConversation() }
@@ -117,8 +112,6 @@ class ChatScreenDeviceTest {
         testTasks.modelFactory = TaskEnvironment.defaultModelFactory
         testTasks.lightModelFactory = TaskEnvironment.defaultLightModelFactory
         testTasks.visionModelFactory = TaskEnvironment.defaultVisionModelFactory
-        // 把持久设置还原成本次测试之前的样子,不把设备留在测试用的开关上
-        savedSpeed?.let { FeatureFlags.get(context).setSpeed(it) }
     }
 
     private fun TaskState.active() = this !is TaskState.Succeeded && this !is TaskState.Failed && this !is TaskState.Cancelled && this != TaskState.Idle
@@ -359,12 +352,9 @@ class ChatScreenDeviceTest {
         }
     }
 
-    /** 并行开关打开:两个对话各跑一个任务,菜单上有小圆点,侧栏「进行中」里点另一个对话切过去。 */
+    /** 两个对话各跑一个任务,菜单上有小圆点,侧栏「进行中」里点另一个对话切过去。 */
     @Test
     fun otherTaskChipSwitches() {
-        val flags = FeatureFlags.get(context)
-        val prior = flags.speedFlags()
-        flags.setSpeed(prior.copy(parallelTasks = true))
         val models = listOf(ScriptedModel().apply { intent = "ACT" }, ScriptedModel().apply { intent = "ACT" })
         // 模型工厂不只任务开工时取:新对话起标题也在后台另取一次,先后不定。按次数轮换会让第一个任务拿到第二个模型;
         // 改成第一个任务真的问过模型之前都给第一个,之后都给第二个(起标题的那一问哪个模型都固定回答)
@@ -402,7 +392,6 @@ class ChatScreenDeviceTest {
         } finally {
             DeviceTaskState.runs.value.forEach { it.cancel() }
             pollUntil(15_000) { DeviceTaskState.busy.value.takeIf { !it } }
-            flags.setSpeed(prior)
         }
     }
 }

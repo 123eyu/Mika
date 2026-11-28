@@ -65,8 +65,8 @@
     <string name="settings_pace_per_app_none">Không có ứng dụng khớp</string>
     <string name="settings_pace_per_app_pick">Chọn</string>
     <string name="settings_pace_per_app_remove">Xóa (theo nhịp độ toàn cục)</string>
-    <string name="settings_parallel">Số tác vụ cùng lúc</string>
-    <string name="settings_parallel_sub">Các tác vụ từ các cuộc trò chuyện khác nhau mỗi tác vụ có màn hình ảo riêng</string>
+    <string name="settings_parallel">Số tác vụ dùng điện thoại cùng lúc</string>
+    <string name="settings_parallel_sub">Tác vụ thao tác ứng dụng mỗi tác vụ dùng một màn hình ảo; tác vụ chỉ trò chuyện, tra web thì không tính</string>
     <plurals name="settings_count_tasks">
         <item quantity="other">%1$d</item>
     </plurals>

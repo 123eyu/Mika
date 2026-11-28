@@ -67,8 +67,8 @@
     <string name="settings_pace_per_app_none">Eşleşen uygulama yok</string>
     <string name="settings_pace_per_app_pick">Seç</string>
     <string name="settings_pace_per_app_remove">Kaldır (genel hızı izle)</string>
-    <string name="settings_parallel">Aynı anda görevler</string>
-    <string name="settings_parallel_sub">Farklı sohbetlerden gelen görevlerin her biri kendi sanal ekranını alır</string>
+    <string name="settings_parallel">Telefonu aynı anda kullanan görevler</string>
+    <string name="settings_parallel_sub">Uygulama kullanan görevlerin her biri bir sanal ekran kullanır; yalnızca sohbet ve web görevleri sayılmaz</string>
     <plurals name="settings_count_tasks">
         <item quantity="one">%1$d</item>
         <item quantity="other">%1$d</item>

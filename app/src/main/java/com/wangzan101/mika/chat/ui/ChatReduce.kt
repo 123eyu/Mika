@@ -60,11 +60,14 @@ internal object ChatReduce {
             ConfirmationCopy.title(s.request), ConfirmationCopy.detail(s.request, appLabel(s.request.app)),
             ConfirmationNotifier.requestKey(s),
         )
-        is TaskState.Held -> if (s.reason == TaskGate.LOCKED || s.reason.queued) null else ExchangeStatus.Paused(s.reason.why, s.reason.resumable)
+        is TaskState.Held -> if (s.reason == TaskGate.LOCKED || s.reason.queued || s.reason.waitingSeat) null else ExchangeStatus.Paused(s.reason.why, s.reason.resumable)
         else -> null
     }
 
-    internal fun state(ex: Exchange, s: TaskState, appLabel: (String) -> String): Exchange = when (s) {
+    internal fun state(ex: Exchange, s: TaskState, appLabel: (String) -> String): Exchange =
+        stateOf(ex, s, appLabel).let { if (s is TaskState.Held && s.reason.waitingSeat) it else it.copy(seatHolder = null) }
+
+    private fun stateOf(ex: Exchange, s: TaskState, appLabel: (String) -> String): Exchange = when (s) {
         TaskState.Idle -> ex
         is TaskState.Running -> {
             val goals = (s.progress as? RunProgress.Task)?.goals
@@ -79,8 +82,11 @@ internal object ChatReduce {
                 notes = if (s.step > 0 && said != null) ex.notes + (s.step to said) else ex.notes,
             )
         }
-        // 等能力的前置条件:锁屏时自动继续;排队等开始;其余能点继续的才给继续
-        is TaskState.Held -> ex.copy(
+        // 等手机座位:仍在干活,那一行写在等谁
+        is TaskState.Held -> if (s.reason.waitingSeat) {
+            ex.copy(status = ExchangeStatus.Working, waitingForModel = false, draft = null, line = s.reason.why, seatHolder = s.reason.ref)
+        } else ex.copy(
+            // 等能力的前置条件:锁屏时自动继续;排队等开始;其余能点继续的才给继续
             status = when {
                 s.reason == TaskGate.LOCKED -> ExchangeStatus.WaitingUnlock
                 s.reason.queued -> ExchangeStatus.Queued(s.reason.why)
